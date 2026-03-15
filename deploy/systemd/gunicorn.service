@@ -1,0 +1,16 @@
+[Unit]
+Description=Gunicorn for juno.kim Django app
+After=network.target
+
+[Service]
+User=ubuntu
+Group=www-data
+WorkingDirectory=/home/ubuntu/apps/juno_kim
+EnvironmentFile=/home/ubuntu/apps/juno_kim/.env
+ExecStart=/home/ubuntu/apps/juno_kim/.venv/bin/gunicorn --workers 3 --bind 127.0.0.1:8000 config.wsgi:application
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+

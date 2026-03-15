@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}김준호 | juno.kim{% endblock %}
+{% block meta_description %}김준호의 Django 기반 개인 사이트. 댓글과 기본 소개를 제공합니다.{% endblock %}
+
+{% block content %}
+  <main class="main-grid">
+    <section class="hero card">
+      <p class="eyebrow">Real website / Django on EC2</p>
+      <h1>김준호</h1>
+      <p class="hero-copy">
+        정적 실험 페이지는 끝냈고, 이제는 EC2 위에서 돌아가는 Django 사이트로
+        정리했습니다. Nginx가 요청을 받고, Gunicorn이 Django 애플리케이션을
+        서비스하는 구조를 전제로 만든 시작점입니다.
+      </p>
+      <div class="hero-actions">
+        <a class="button button-primary" href="#comments">댓글 남기기</a>
+        <a class="button button-secondary" href="mailto:hello@juno.kim">메일 보내기</a>
+      </div>
+    </section>
+
+    <aside class="sidebar">
+      <section class="card" id="about">
+        <h2>소개</h2>
+        <p>웹, AI, 자동화 쪽 작업을 합니다. 지금은 실제 서비스 구조를 올리는 단계입니다.</p>
+      </section>
+
+      <section class="card" id="stack">
+        <h2>스택</h2>
+        <ul class="stack-list">
+          <li>Browser → juno.kim → DNS</li>
+          <li>EC2 → Nginx → Gunicorn</li>
+          <li>Django → SQLite by default</li>
+          <li>Production DB는 `DATABASE_URL`로 교체 가능</li>
+        </ul>
+      </section>
+    </aside>
+
+    <section class="card comments-card" id="comments">
+      <div class="section-head">
+        <div>
+          <h2>댓글</h2>
+          <p>이제 댓글은 브라우저가 아니라 Django 데이터베이스에 저장됩니다.</p>
+        </div>
+        <span class="comment-count">{{ comments|length }}개</span>
+      </div>
+
+      <form class="comment-form" method="post">
+        {% csrf_token %}
+        {% if comment_form.non_field_errors %}
+          <div class="form-errors">{{ comment_form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="form-grid">
+          <div class="field-group">
+            <label for="{{ comment_form.nickname.id_for_label }}">닉네임</label>
+            {{ comment_form.nickname }}
+            {% if comment_form.nickname.errors %}
+              <div class="field-errors">{{ comment_form.nickname.errors }}</div>
+            {% endif %}
+          </div>
+
+          <div class="field-group field-group-full">
+            <label for="{{ comment_form.message.id_for_label }}">댓글</label>
+            {{ comment_form.message }}
+            {% if comment_form.message.errors %}
+              <div class="field-errors">{{ comment_form.message.errors }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <p class="form-note">최신 댓글 50개를 보여 줍니다.</p>
+          <button class="button button-primary" type="submit">댓글 저장</button>
+        </div>
+      </form>
+
+      <div class="comment-list">
+        {% for comment in comments %}
+          <article class="comment-item">
+            <header class="comment-meta">
+              <strong>{{ comment.nickname }}</strong>
+              <time datetime="{{ comment.created_at|date:'c' }}">{{ comment.created_at|date:"Y.m.d H:i" }}</time>
+            </header>
+            <p>{{ comment.message|linebreaksbr }}</p>
+          </article>
+        {% empty %}
+          <div class="comment-empty">아직 댓글이 없습니다.</div>
+        {% endfor %}
+      </div>
+    </section>
+  </main>
+{% endblock %}
+
