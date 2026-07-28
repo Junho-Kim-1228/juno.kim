@@ -106,6 +106,10 @@ npm run build
 - 기존 Discord Bot 파일, 환경변수, 프로세스, 포트 및 systemd 설정 변경 금지
 - 외부 공개 포트는 Nginx의 80/443으로 제한
 
+EC2 초기 설치, systemd/Nginx, HTTPS, 백업 및 코드 롤백 절차는
+[`docs/deployment.md`](docs/deployment.md)에 정리되어 있습니다.
+
 ## 현재 상태
 
-프로젝트 기반 구조를 구성하는 중입니다.
+Django REST API와 React SPA 구현 및 로컬 통합 검증을 완료했습니다.
+운영 배포는 `deploy/`의 격리된 설정을 사용합니다.

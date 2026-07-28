@@ -1,0 +1,36 @@
+[Unit]
+Description=juno.kim Django application
+After=network-online.target mysql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=juno-kim
+Group=www-data
+SupplementaryGroups=juno-kim
+WorkingDirectory=/var/www/juno-kim/backend
+EnvironmentFile=/etc/juno-kim/juno-kim.env
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/var/www/juno-kim/.venv/bin/gunicorn --config /var/www/juno-kim/backend/gunicorn.conf.py config.wsgi:application
+
+RuntimeDirectory=juno-kim
+RuntimeDirectoryMode=0750
+UMask=0027
+
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+KillSignal=SIGQUIT
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/var/www/juno-kim/backend/media
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=juno-kim
+
+[Install]
+WantedBy=multi-user.target

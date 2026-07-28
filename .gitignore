@@ -6,6 +6,8 @@ __pycache__/
 .venv/
 venv/
 env/
+!deploy/env/
+!deploy/env/*.example
 backend/.venv/
 .pytest_cache/
 .mypy_cache/
@@ -27,6 +29,7 @@ backend/media/*
 
 # Node.js and Vite
 node_modules/
+.npm/
 frontend/dist/
 frontend/.vite/
 npm-debug.log*
@@ -62,4 +65,3 @@ $RECYCLE.BIN/
 *.tmp
 *.temp
 .cache/
-
