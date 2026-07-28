@@ -33,6 +33,23 @@ juno.kim/
 
 세부 설치 및 실행 방법은 각 구현 단계가 안정화되면서 이 문서에 추가합니다.
 
+### 로컬 MySQL
+
+로컬 데이터베이스는 Docker의 MySQL 8.4 컨테이너를 사용합니다. 호스트의 3306 포트와 충돌하거나 Windows에서 바인딩이 제한되는 환경을 고려해 `127.0.0.1:3307`에만 공개합니다. 컨테이너 내부에서는 기본 MySQL 포트 3306을 사용합니다.
+
+```powershell
+Copy-Item backend/.env.example backend/.env
+# backend/.env의 빈 개발 환경변수를 안전한 로컬 값으로 채운 뒤 실행합니다.
+docker compose --env-file backend/.env -f deploy/docker-compose.local.yml up -d mysql
+docker compose --env-file backend/.env -f deploy/docker-compose.local.yml ps
+```
+
+Django migration:
+
+```powershell
+backend/.venv/Scripts/python.exe backend/manage.py migrate
+```
+
 ## 환경변수와 보안
 
 - 실제 환경변수 파일과 비밀값은 Git에 커밋하지 않습니다.
@@ -52,4 +69,3 @@ juno.kim/
 ## 현재 상태
 
 프로젝트 기반 구조를 구성하는 중입니다.
-
