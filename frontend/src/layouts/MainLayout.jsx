@@ -22,7 +22,6 @@ export function MainLayout({ children }) {
           <a href="/#about">About</a>
         </nav>
         <div className="account-nav">
-          <a href="https://github.com/Junho-Kim-1228" target="_blank" rel="noreferrer">GitHub</a>
           {user ? (
             <>
               <Link to="/profile">{user.profile?.display_name || user.username}</Link>
