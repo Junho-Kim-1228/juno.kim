@@ -13,6 +13,8 @@ readonly BACKUP_ROOT="/var/backups/${APP_NAME}"
 readonly PROTECTED_SERVICE="game-recruit-bot.service"
 readonly APP_SERVICE="${APP_NAME}.service"
 readonly LOCK_FILE="/run/lock/${APP_NAME}-deploy.lock"
+readonly NGINX_SITE="/etc/nginx/sites-available/${APP_NAME}.conf"
+readonly NGINX_SITE_BACKUP="${NGINX_SITE}.deploy-backup"
 
 if [[ ${EUID} -ne 0 ]]; then
     echo "This deployment entrypoint must run as root." >&2
@@ -96,8 +98,20 @@ sudo -u "${APP_USER}" env DJANGO_SETTINGS_MODULE=config.settings.production DJAN
 sudo -u "${APP_USER}" env HOME="${APP_ROOT}" npm --prefix "${APP_ROOT}/frontend" ci
 sudo -u "${APP_USER}" env HOME="${APP_ROOT}" npm --prefix "${APP_ROOT}/frontend" run build
 
+cp --preserve=mode,ownership,timestamps "${NGINX_SITE}" "${NGINX_SITE_BACKUP}"
+install -o root -g root -m 0644 \
+    "${APP_ROOT}/deploy/nginx/juno-kim.conf" \
+    "${NGINX_SITE}"
+if ! nginx -t; then
+    echo "Nginx configuration validation failed; restoring previous site configuration." >&2
+    cp --preserve=mode,ownership,timestamps "${NGINX_SITE_BACKUP}" "${NGINX_SITE}"
+    rm -f "${NGINX_SITE_BACKUP}"
+    nginx -t
+    exit 1
+fi
+rm -f "${NGINX_SITE_BACKUP}"
+
 systemctl restart "${APP_SERVICE}"
-nginx -t
 systemctl reload nginx
 
 health_url='http://localhost/api/v1/health/'

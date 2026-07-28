@@ -38,6 +38,9 @@ class AuthenticationAPITests(APITestCase):
         )
         self.assertEqual(register.status_code, status.HTTP_201_CREATED)
         self.assertNotIn("password", register.data)
+        registered_user = User.objects.get(username=credentials["username"])
+        self.assertFalse(registered_user.is_staff)
+        self.assertFalse(registered_user.is_superuser)
 
         login = self.client.post(
             "/api/v1/auth/login/",
@@ -72,3 +75,42 @@ class AuthenticationAPITests(APITestCase):
     def test_me_requires_authentication(self):
         response = self.client.get("/api/v1/auth/me/")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_registration_cannot_create_staff_or_superuser(self):
+        response = self.client.post(
+            "/api/v1/auth/register/",
+            {
+                "username": "malicious-register",
+                "email": "malicious@example.com",
+                "password": "StrongTemporary!2026",
+                "is_staff": True,
+                "is_superuser": True,
+            },
+            format="json",
+            **self.csrf_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        user = User.objects.get(username="malicious-register")
+        self.assertFalse(user.is_staff)
+        self.assertFalse(user.is_superuser)
+
+    def test_registration_rejects_duplicate_email(self):
+        User.objects.create_user(
+            username="existing-user",
+            email="duplicate@example.com",
+            password="StrongTemporary!2026",
+        )
+
+        response = self.client.post(
+            "/api/v1/auth/register/",
+            {
+                "username": "duplicate-email-user",
+                "email": "duplicate@example.com",
+                "password": "StrongTemporary!2026",
+            },
+            format="json",
+            **self.csrf_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

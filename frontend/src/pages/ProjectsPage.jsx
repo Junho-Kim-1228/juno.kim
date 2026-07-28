@@ -16,7 +16,7 @@ export function ProjectsPage() {
 
   return (
     <section className="page-section">
-      <div className="section-heading"><div><p className="eyebrow">ARCHIVE</p><h1>프로젝트</h1></div>{user && <Link className="button-link small" to="/projects/new">프로젝트 추가</Link>}</div>
+      <div className="section-heading"><div><p className="eyebrow">ARCHIVE</p><h1>프로젝트</h1></div>{user?.is_staff && <Link className="button-link small" to="/projects/new">프로젝트 추가</Link>}</div>
       {error && <ErrorState error={error} />}
       {loading ? <LoadingState /> : <div className="card-grid">{projects.map((project) => <ProjectCard key={project.id} project={project} />)}</div>}
     </section>

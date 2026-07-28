@@ -1,8 +1,17 @@
+from django.conf import settings
 from django.core.validators import MinLengthValidator
 from django.db import models
 
 
 class GuestbookEntry(models.Model):
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="guestbook_entries",
+        verbose_name="작성자",
+    )
     name = models.CharField("이름", max_length=40)
     message = models.TextField(
         "메시지",

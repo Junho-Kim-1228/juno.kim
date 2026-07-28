@@ -28,7 +28,7 @@ export function MainLayout({ children }) {
               <button className="text-button" type="button" onClick={handleLogout}>로그아웃</button>
             </>
           ) : (
-            <Link className="admin-link" to="/login">Admin</Link>
+            <Link className="admin-link" to="/login">로그인</Link>
           )}
         </div>
       </header>

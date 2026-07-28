@@ -14,7 +14,7 @@ export function ProjectDetailPage() {
   useEffect(() => { projectApi.detail(slug).then(setProject).catch(setError) }, [slug])
   if (error) return <ErrorState error={error} />
   if (!project) return <LoadingState />
-  const canEdit = user && (user.is_staff || user.id === project.owner.id)
+  const canEdit = user?.is_staff
 
   return (
     <article className="detail-page page-section">

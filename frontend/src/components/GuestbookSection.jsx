@@ -69,7 +69,7 @@ export function GuestbookSection() {
           <button type="submit" disabled={submitting}>{submitting ? '등록 중' : '남기기'}</button>
         </form>
       ) : (
-        <p className="guestbook-auth-note">방문록을 남기려면 <Link to="/login">로그인</Link>해 주세요.</p>
+        <p className="guestbook-auth-note">방문록을 작성하려면 로그인해 주세요. <Link to="/login">로그인</Link></p>
       )}
       {error && <ErrorState error={error} />}
       {loading ? <p className="guestbook-state">방문록을 불러오는 중입니다.</p> : (

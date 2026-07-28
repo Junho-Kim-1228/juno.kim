@@ -1,7 +1,7 @@
 from django.db.models import Count, Q
-from rest_framework import permissions, viewsets
+from rest_framework import viewsets
 
-from apps.permissions import IsOwnerOrStaffOrReadOnly, IsStaffOrReadOnly
+from apps.permissions import IsStaffOrReadOnly
 
 from .models import Category, Post, Tag
 from .serializers import CategorySerializer, PostSerializer, TagSerializer
@@ -23,7 +23,7 @@ class TagViewSet(viewsets.ModelViewSet):
 
 class PostViewSet(viewsets.ModelViewSet):
     serializer_class = PostSerializer
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly, IsOwnerOrStaffOrReadOnly)
+    permission_classes = (IsStaffOrReadOnly,)
     lookup_field = "slug"
 
     def get_queryset(self):
@@ -36,8 +36,6 @@ class PostViewSet(viewsets.ModelViewSet):
         user = self.request.user
         if user.is_authenticated and user.is_staff:
             return queryset
-        if user.is_authenticated:
-            return queryset.filter(Q(status=Post.Status.PUBLISHED) | Q(author=user))
         return queryset.filter(status=Post.Status.PUBLISHED)
 
     def perform_create(self, serializer):

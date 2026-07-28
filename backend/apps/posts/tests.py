@@ -8,15 +8,21 @@ from .models import Category, Post, Tag
 
 class PostAPITests(APITestCase):
     def setUp(self):
-        self.author = User.objects.create_user(
-            username="post-author",
-            email="post-author@example.com",
+        self.member = User.objects.create_user(
+            username="post-member",
+            email="post-member@example.com",
             password="StrongTemporary!2026",
+        )
+        self.staff = User.objects.create_user(
+            username="post-staff",
+            email="post-staff@example.com",
+            password="StrongTemporary!2026",
+            is_staff=True,
         )
         self.category = Category.objects.create(name="Django")
         self.tag = Tag.objects.create(name="API")
         self.published = Post.objects.create(
-            author=self.author,
+            author=self.staff,
             category=self.category,
             title="Published Post",
             excerpt="excerpt",
@@ -25,10 +31,17 @@ class PostAPITests(APITestCase):
         )
         self.published.tags.add(self.tag)
         self.draft = Post.objects.create(
-            author=self.author,
+            author=self.member,
             title="Draft Post",
             excerpt="excerpt",
             content="content",
+        )
+        self.archived = Post.objects.create(
+            author=self.staff,
+            title="Archived Post",
+            excerpt="excerpt",
+            content="content",
+            status=Post.Status.ARCHIVED,
         )
 
     def test_anonymous_user_only_sees_published_posts(self):
@@ -38,8 +51,101 @@ class PostAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn(self.published.slug, slugs)
         self.assertNotIn(self.draft.slug, slugs)
+        self.assertNotIn(self.archived.slug, slugs)
 
-    def test_non_staff_user_cannot_create_category(self):
-        self.client.force_authenticate(self.author)
-        response = self.client.post("/api/v1/categories/", {"name": "Security"}, format="json")
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+    def test_member_cannot_create_or_modify_post(self):
+        self.client.force_authenticate(self.member)
+        created = self.client.post(
+            "/api/v1/posts/",
+            {
+                "title": "Unauthorized Post",
+                "excerpt": "excerpt",
+                "content": "content",
+                "status": Post.Status.PUBLISHED,
+                "is_featured": True,
+            },
+            format="json",
+        )
+        updated = self.client.patch(
+            f"/api/v1/posts/{self.published.slug}/",
+            {"status": Post.Status.ARCHIVED, "is_featured": True},
+            format="json",
+        )
+
+        self.assertEqual(created.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(updated.status_code, status.HTTP_403_FORBIDDEN)
+        self.published.refresh_from_db()
+        self.assertEqual(self.published.status, Post.Status.PUBLISHED)
+        self.assertFalse(self.published.is_featured)
+
+    def test_member_cannot_see_own_draft(self):
+        self.client.force_authenticate(self.member)
+
+        listing = self.client.get("/api/v1/posts/")
+        detail = self.client.get(f"/api/v1/posts/{self.draft.slug}/")
+
+        slugs = {item["slug"] for item in listing.data["results"]}
+        self.assertNotIn(self.draft.slug, slugs)
+        self.assertEqual(detail.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_staff_can_see_non_public_posts_and_create_and_modify(self):
+        self.client.force_authenticate(self.staff)
+
+        listing = self.client.get("/api/v1/posts/")
+        slugs = {item["slug"] for item in listing.data["results"]}
+        created = self.client.post(
+            "/api/v1/posts/",
+            {
+                "title": "Staff Post",
+                "excerpt": "excerpt",
+                "content": "content",
+                "category_id": self.category.id,
+                "tag_ids": [self.tag.id],
+                "status": Post.Status.PUBLISHED,
+                "is_featured": True,
+            },
+            format="json",
+        )
+        updated = self.client.patch(
+            f"/api/v1/posts/{self.draft.slug}/",
+            {"status": Post.Status.PUBLISHED},
+            format="json",
+        )
+
+        self.assertIn(self.draft.slug, slugs)
+        self.assertIn(self.archived.slug, slugs)
+        self.assertEqual(created.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(updated.status_code, status.HTTP_200_OK)
+        post = Post.objects.get(slug=created.data["slug"])
+        self.assertEqual(post.author, self.staff)
+        self.assertTrue(post.is_featured)
+
+    def test_only_staff_can_change_categories_and_tags(self):
+        self.client.force_authenticate(self.member)
+        member_category = self.client.post(
+            "/api/v1/categories/",
+            {"name": "Security"},
+            format="json",
+        )
+        member_tag = self.client.post(
+            "/api/v1/tags/",
+            {"name": "React"},
+            format="json",
+        )
+
+        self.client.force_authenticate(self.staff)
+        staff_category = self.client.post(
+            "/api/v1/categories/",
+            {"name": "Security"},
+            format="json",
+        )
+        staff_tag = self.client.post(
+            "/api/v1/tags/",
+            {"name": "React"},
+            format="json",
+        )
+
+        self.assertEqual(member_category.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(member_tag.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(staff_category.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(staff_tag.status_code, status.HTTP_201_CREATED)

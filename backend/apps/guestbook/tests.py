@@ -1,3 +1,4 @@
+from django.core.cache import cache
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
@@ -8,6 +9,7 @@ from .models import GuestbookEntry
 
 class GuestbookAPITests(APITestCase):
     def setUp(self):
+        cache.clear()
         self.client = APIClient(enforce_csrf_checks=True)
         response = self.client.get("/api/v1/auth/csrf/")
         self.csrf_headers = {"HTTP_X_CSRFTOKEN": response.data["csrfToken"]}
@@ -40,8 +42,37 @@ class GuestbookAPITests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         entry = GuestbookEntry.objects.get()
+        self.assertEqual(entry.author, self.user)
         self.assertEqual(entry.name, "로그인 사용자")
         self.assertEqual(entry.message, "반갑습니다.")
+
+    def test_legacy_entry_without_author_remains_readable(self):
+        entry = GuestbookEntry.objects.create(name="기존 방문자", message="기존 메시지")
+
+        response = self.client.get("/api/v1/guestbook/")
+
+        self.assertIsNone(entry.author)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["results"][0]["name"], "기존 방문자")
+
+    def test_blank_or_overlong_message_is_rejected(self):
+        self.client.force_authenticate(self.user)
+
+        blank = self.client.post(
+            "/api/v1/guestbook/",
+            {"message": "   "},
+            format="json",
+            **self.csrf_headers,
+        )
+        overlong = self.client.post(
+            "/api/v1/guestbook/",
+            {"message": "x" * 501},
+            format="json",
+            **self.csrf_headers,
+        )
+
+        self.assertEqual(blank.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(overlong.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_anonymous_visitor_cannot_write(self):
         response = self.client.post(

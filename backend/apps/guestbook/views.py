@@ -23,4 +23,7 @@ class GuestbookListCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         profile = getattr(self.request.user, "profile", None)
         display_name = profile.display_name.strip() if profile else ""
-        serializer.save(name=display_name or self.request.user.username)
+        serializer.save(
+            author=self.request.user,
+            name=display_name or self.request.user.username,
+        )

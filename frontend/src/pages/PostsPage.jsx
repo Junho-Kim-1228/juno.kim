@@ -12,5 +12,5 @@ export function PostsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   useEffect(() => { postApi.list().then(setPosts).catch(setError).finally(() => setLoading(false)) }, [])
-  return <section className="page-section"><div className="section-heading"><div><p className="eyebrow">TECH BLOG</p><h1>기술 기록</h1></div>{user && <Link className="button-link small" to="/blog/new">글쓰기</Link>}</div>{error && <ErrorState error={error} />}{loading ? <LoadingState /> : <div className="card-grid">{posts.map((post) => <PostCard key={post.id} post={post} />)}</div>}</section>
+  return <section className="page-section"><div className="section-heading"><div><p className="eyebrow">TECH BLOG</p><h1>기술 기록</h1></div>{user?.is_staff && <Link className="button-link small" to="/blog/new">글쓰기</Link>}</div>{error && <ErrorState error={error} />}{loading ? <LoadingState /> : <div className="card-grid">{posts.map((post) => <PostCard key={post.id} post={post} />)}</div>}</section>
 }

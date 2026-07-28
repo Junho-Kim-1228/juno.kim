@@ -1,7 +1,6 @@
-from django.db.models import Q
-from rest_framework import permissions, viewsets
+from rest_framework import viewsets
 
-from apps.permissions import IsOwnerOrStaffOrReadOnly
+from apps.permissions import IsStaffOrReadOnly
 
 from .models import Project
 from .serializers import ProjectSerializer
@@ -9,7 +8,7 @@ from .serializers import ProjectSerializer
 
 class ProjectViewSet(viewsets.ModelViewSet):
     serializer_class = ProjectSerializer
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly, IsOwnerOrStaffOrReadOnly)
+    permission_classes = (IsStaffOrReadOnly,)
     lookup_field = "slug"
 
     def get_queryset(self):
@@ -17,8 +16,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
         user = self.request.user
         if user.is_authenticated and user.is_staff:
             return queryset
-        if user.is_authenticated:
-            return queryset.filter(Q(status=Project.Status.PUBLISHED) | Q(owner=user))
         return queryset.filter(status=Project.Status.PUBLISHED)
 
     def perform_create(self, serializer):

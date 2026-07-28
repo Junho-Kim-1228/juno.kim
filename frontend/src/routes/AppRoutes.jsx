@@ -20,12 +20,12 @@ export function AppRoutes() {
     <Route exact path="/login" component={LoginPage} />
     <Route exact path="/register" component={RegisterPage} />
     <ProtectedRoute exact path="/profile" component={ProfilePage} />
-    <ProtectedRoute exact path="/projects/new" component={ProjectEditorPage} />
-    <ProtectedRoute exact path="/projects/:slug/edit" component={ProjectEditorPage} />
+    <ProtectedRoute exact path="/projects/new" component={ProjectEditorPage} staffOnly fallbackPath="/projects" />
+    <ProtectedRoute exact path="/projects/:slug/edit" component={ProjectEditorPage} staffOnly fallbackPath="/projects" />
     <Route exact path="/projects/:slug" component={ProjectDetailPage} />
     <Route exact path="/projects" component={ProjectsPage} />
-    <ProtectedRoute exact path="/blog/new" component={PostEditorPage} />
-    <ProtectedRoute exact path="/blog/:slug/edit" component={PostEditorPage} />
+    <ProtectedRoute exact path="/blog/new" component={PostEditorPage} staffOnly fallbackPath="/blog" />
+    <ProtectedRoute exact path="/blog/:slug/edit" component={PostEditorPage} staffOnly fallbackPath="/blog" />
     <Route exact path="/blog/:slug" component={PostDetailPage} />
     <Route exact path="/blog" component={PostsPage} />
     <Route component={NotFoundPage} />

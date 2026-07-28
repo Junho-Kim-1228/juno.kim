@@ -16,6 +16,14 @@ CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])  # noqa: F40
 if not CSRF_TRUSTED_ORIGINS:
     raise ImproperlyConfigured("운영 환경의 CSRF_TRUSTED_ORIGINS를 설정해야 합니다.")
 
+EXPECTED_ORIGIN = "https://juno.kim"
+if set(CORS_ALLOWED_ORIGINS) != {EXPECTED_ORIGIN}:  # noqa: F405
+    raise ImproperlyConfigured("운영 CORS는 https://juno.kim만 허용해야 합니다.")
+if set(CSRF_TRUSTED_ORIGINS) != {EXPECTED_ORIGIN}:
+    raise ImproperlyConfigured("운영 CSRF 신뢰 출처는 https://juno.kim만 허용해야 합니다.")
+if ADMIN_URL != "admin/":  # noqa: F405
+    raise ImproperlyConfigured("ADMIN_URL은 Nginx 프록시 경로인 admin/과 일치해야 합니다.")
+
 SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=True)  # noqa: F405
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
@@ -25,8 +33,9 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = "same-origin"
 X_FRAME_OPTIONS = "DENY"
 
-# HTTPS가 정상 동작하는 것을 확인한 뒤 0보다 큰 값으로 올립니다.
-SECURE_HSTS_SECONDS = env.int("SECURE_HSTS_SECONDS", default=0)  # noqa: F405
+SECURE_HSTS_SECONDS = env.int("SECURE_HSTS_SECONDS", default=31536000)  # noqa: F405
+if SECURE_HSTS_SECONDS < 31536000:
+    raise ImproperlyConfigured("운영 SECURE_HSTS_SECONDS는 31536000 이상이어야 합니다.")
 SECURE_HSTS_INCLUDE_SUBDOMAINS = env.bool(  # noqa: F405
     "SECURE_HSTS_INCLUDE_SUBDOMAINS",
     default=False,

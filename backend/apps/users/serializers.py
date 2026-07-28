@@ -56,6 +56,8 @@ class RegistrationSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
+        validated_data["is_staff"] = False
+        validated_data["is_superuser"] = False
         return User.objects.create_user(**validated_data)
 
 
