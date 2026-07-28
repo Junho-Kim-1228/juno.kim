@@ -1,0 +1,42 @@
+name: Deploy to production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: juno-kim-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy juno.kim
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Run restricted EC2 deployment
+        env:
+          DEPLOY_KEY: ${{ secrets.JUNO_DEPLOY_SSH_KEY }}
+        run: |
+          set -Eeuo pipefail
+          test -n "${DEPLOY_KEY}"
+          install -d -m 0700 "${HOME}/.ssh"
+          printf '%s\n' "${DEPLOY_KEY}" > "${HOME}/.ssh/juno-kim-deploy"
+          chmod 0600 "${HOME}/.ssh/juno-kim-deploy"
+          cat > "${HOME}/.ssh/known_hosts" <<'EOF'
+          43.200.172.77 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGOi9YIMjvJJ1CITSCAWwyg44xrFQuvU9F8PHG2/FFb6
+          EOF
+          chmod 0600 "${HOME}/.ssh/known_hosts"
+          ssh -T \
+            -i "${HOME}/.ssh/juno-kim-deploy" \
+            -o BatchMode=yes \
+            -o ConnectTimeout=15 \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="${HOME}/.ssh/known_hosts" \
+            juno-deploy@43.200.172.77

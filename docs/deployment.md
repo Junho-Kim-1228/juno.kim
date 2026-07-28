@@ -62,6 +62,22 @@ sudo systemctl status juno-kim.service --no-pager
 sudo journalctl -u juno-kim.service -n 100 --no-pager
 ```
 
+### GitHub Actions automatic deployment
+
+A push to `main` runs `.github/workflows/deploy.yml`. The workflow connects as
+the restricted `juno-deploy` account and can execute only
+`/usr/local/sbin/juno-kim-deploy`. Its SSH key cannot open a shell, allocate a
+PTY, or use port forwarding.
+
+Configure this repository Action secret:
+
+- `JUNO_DEPLOY_SSH_KEY`: the dedicated Ed25519 private key for this deployment
+
+The server entrypoint is a root-owned fixed copy of
+`deploy/scripts/ci-deploy.sh`. Repository changes cannot replace the installed
+entrypoint automatically; reinstall it manually after reviewing deployment
+procedure changes.
+
 ## HTTPS
 
 Confirm that the `juno.kim` A record resolves to the EC2 public IPv4 address and
