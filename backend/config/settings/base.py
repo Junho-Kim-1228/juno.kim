@@ -28,6 +28,10 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "apps.users.apps.UsersConfig",
+    "apps.projects.apps.ProjectsConfig",
+    "apps.posts.apps.PostsConfig",
+    "apps.comments.apps.CommentsConfig",
 ]
 
 MIDDLEWARE = [
@@ -93,4 +97,3 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BACKEND_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
