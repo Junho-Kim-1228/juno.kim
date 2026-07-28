@@ -26,6 +26,7 @@ sudo -u "${APP_NAME}" git -C "${APP_ROOT}" rev-parse HEAD > "${backup_dir}/git-r
 mysqldump \
     --defaults-extra-file="${MYSQL_CLIENT_CONFIG}" \
     --single-transaction \
+    --no-tablespaces \
     --routines \
     --triggers \
     "${DATABASE_NAME}" | gzip -9 > "${backup_dir}/database.sql.gz"
