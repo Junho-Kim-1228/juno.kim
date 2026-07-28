@@ -22,7 +22,7 @@ backup_dir="${BACKUP_ROOT}/${backup_id}"
 
 install -d -m 0750 -o root -g "${APP_NAME}" "${backup_dir}"
 
-git -C "${APP_ROOT}" rev-parse HEAD > "${backup_dir}/git-revision.txt"
+sudo -u "${APP_NAME}" git -C "${APP_ROOT}" rev-parse HEAD > "${backup_dir}/git-revision.txt"
 mysqldump \
     --defaults-extra-file="${MYSQL_CLIENT_CONFIG}" \
     --single-transaction \
