@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path
+from django.urls import include, path
 
 from .views import health_check
 
@@ -9,6 +9,10 @@ from .views import health_check
 urlpatterns = [
     path(settings.ADMIN_URL, admin.site.urls),
     path("api/v1/health/", health_check, name="health-check"),
+    path("api/v1/", include("apps.users.urls")),
+    path("api/v1/", include("apps.projects.urls")),
+    path("api/v1/", include("apps.posts.urls")),
+    path("api/v1/", include("apps.comments.urls")),
 ]
 
 if settings.DEBUG:
