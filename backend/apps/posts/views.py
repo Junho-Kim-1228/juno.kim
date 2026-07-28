@@ -31,6 +31,7 @@ class PostViewSet(viewsets.ModelViewSet):
             Post.objects.select_related("author", "author__profile", "category")
             .prefetch_related("tags")
             .annotate(comment_count=Count("comments", filter=Q(comments__is_active=True)))
+            .order_by("-is_featured", "-published_at", "-created_at")
         )
         user = self.request.user
         if user.is_authenticated and user.is_staff:

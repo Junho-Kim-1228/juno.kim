@@ -50,6 +50,17 @@ Django migration:
 backend/.venv/Scripts/python.exe backend/manage.py migrate
 ```
 
+### 백엔드 테스트
+
+자동화 테스트는 개발 MySQL 데이터를 변경하지 않고 메모리 SQLite를 사용합니다.
+
+```powershell
+Set-Location backend
+$env:TEST_DATABASE_URL = 'sqlite:///:memory:'
+.\.venv\Scripts\python.exe .\manage.py test apps
+Remove-Item Env:TEST_DATABASE_URL
+```
+
 ## 환경변수와 보안
 
 - 실제 환경변수 파일과 비밀값은 Git에 커밋하지 않습니다.

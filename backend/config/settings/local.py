@@ -13,3 +13,7 @@ ALLOWED_HOSTS = env.list(  # noqa: F405
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 JWT_REFRESH_COOKIE_SECURE = False
+
+TEST_DATABASE_URL = env.str("TEST_DATABASE_URL", default="")  # noqa: F405
+if TEST_DATABASE_URL:
+    DATABASES = {"default": env.db_url_config(TEST_DATABASE_URL)}  # noqa: F405
