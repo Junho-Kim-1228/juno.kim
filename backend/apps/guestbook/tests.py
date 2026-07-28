@@ -1,9 +1,12 @@
+from django.contrib.admin.sites import AdminSite
 from django.core.cache import cache
+from django.test import RequestFactory, TestCase
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
 from apps.users.models import User
 
+from .admin import GuestbookEntryAdmin
 from .models import GuestbookEntry
 
 
@@ -95,3 +98,42 @@ class GuestbookAPITests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class GuestbookAdminPermissionTests(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.model_admin = GuestbookEntryAdmin(GuestbookEntry, AdminSite())
+        self.member = User.objects.create_user(
+            username="guestbook-member",
+            email="guestbook-member@example.com",
+            password="StrongTemporary!2026",
+        )
+        self.staff = User.objects.create_user(
+            username="guestbook-staff",
+            email="guestbook-staff@example.com",
+            password="StrongTemporary!2026",
+            is_staff=True,
+        )
+
+    def request_for(self, user):
+        request = self.factory.get("/admin/guestbook/guestbookentry/")
+        request.user = user
+        return request
+
+    def test_active_staff_can_manage_but_not_create_guestbook_entries(self):
+        request = self.request_for(self.staff)
+
+        self.assertTrue(self.model_admin.has_module_permission(request))
+        self.assertTrue(self.model_admin.has_view_permission(request))
+        self.assertTrue(self.model_admin.has_change_permission(request))
+        self.assertTrue(self.model_admin.has_delete_permission(request))
+        self.assertFalse(self.model_admin.has_add_permission(request))
+
+    def test_member_has_no_guestbook_admin_permissions(self):
+        request = self.request_for(self.member)
+
+        self.assertFalse(self.model_admin.has_module_permission(request))
+        self.assertFalse(self.model_admin.has_view_permission(request))
+        self.assertFalse(self.model_admin.has_change_permission(request))
+        self.assertFalse(self.model_admin.has_delete_permission(request))

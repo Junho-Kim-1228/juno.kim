@@ -1,10 +1,12 @@
 from django.contrib import admin
 
+from apps.admin_mixins import StaffContentAdminMixin
+
 from .models import GuestbookEntry
 
 
 @admin.register(GuestbookEntry)
-class GuestbookEntryAdmin(admin.ModelAdmin):
+class GuestbookEntryAdmin(StaffContentAdminMixin, admin.ModelAdmin):
     list_display = ("short_message", "name", "author", "is_visible", "created_at")
     list_filter = ("is_visible", "created_at")
     list_editable = ("is_visible",)

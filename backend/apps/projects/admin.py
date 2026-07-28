@@ -1,10 +1,12 @@
 from django.contrib import admin
 
+from apps.admin_mixins import StaffContentAdminMixin
+
 from .models import Project
 
 
 @admin.register(Project)
-class ProjectAdmin(admin.ModelAdmin):
+class ProjectAdmin(StaffContentAdminMixin, admin.ModelAdmin):
     list_display = (
         "title",
         "owner",

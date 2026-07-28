@@ -1,10 +1,12 @@
 from django.contrib import admin
 
+from apps.admin_mixins import StaffContentAdminMixin
+
 from .models import Comment
 
 
 @admin.register(Comment)
-class CommentAdmin(admin.ModelAdmin):
+class CommentAdmin(StaffContentAdminMixin, admin.ModelAdmin):
     list_display = ("short_content", "post", "author", "parent", "is_active", "created_at")
     list_filter = ("is_active", "created_at", "updated_at")
     search_fields = ("content", "post__title", "author__username", "author__email")

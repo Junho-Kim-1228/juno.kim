@@ -1,10 +1,12 @@
 from django.contrib import admin
 
+from apps.admin_mixins import StaffContentAdminMixin
+
 from .models import Category, Post, Tag
 
 
 @admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
+class CategoryAdmin(StaffContentAdminMixin, admin.ModelAdmin):
     list_display = ("name", "slug", "ordering")
     list_editable = ("ordering",)
     search_fields = ("name", "description")
@@ -12,14 +14,14 @@ class CategoryAdmin(admin.ModelAdmin):
 
 
 @admin.register(Tag)
-class TagAdmin(admin.ModelAdmin):
+class TagAdmin(StaffContentAdminMixin, admin.ModelAdmin):
     list_display = ("name", "slug")
     search_fields = ("name",)
     readonly_fields = ("slug",)
 
 
 @admin.register(Post)
-class PostAdmin(admin.ModelAdmin):
+class PostAdmin(StaffContentAdminMixin, admin.ModelAdmin):
     list_display = (
         "title",
         "author",
