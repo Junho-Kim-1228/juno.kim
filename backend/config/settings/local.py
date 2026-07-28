@@ -12,4 +12,4 @@ ALLOWED_HOSTS = env.list(  # noqa: F405
 )
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-
+JWT_REFRESH_COOKIE_SECURE = False
