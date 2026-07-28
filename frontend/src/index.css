@@ -53,7 +53,7 @@ main { flex: 1; }
 }
 
 .page-section { width: min(1040px, calc(100% - 32px)); margin: 0 auto; padding: 50px 0 12px; }
-.hero-section { min-height: 330px; padding-top: 44px; display: flex; flex-direction: column; justify-content: center; }
+.hero-section { min-height: 300px; padding-top: 44px; display: flex; flex-direction: column; justify-content: center; }
 .hero-section h1, .detail-page h1, .auth-panel h1, .form-page h1 {
   margin: 8px 0 10px;
   font-size: clamp(2.8rem, 6vw, 4.35rem);
@@ -127,7 +127,7 @@ main { flex: 1; }
 .about-links { display: flex; gap: 20px; margin-top: 18px; }
 
 .guestbook-section { padding-top: 54px; }
-.guestbook-form { display: grid; grid-template-columns: 210px minmax(0, 1fr) auto; gap: 12px; align-items: end; }
+.guestbook-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: end; }
 .guestbook-form label { display: grid; gap: 6px; color: #c7d0dc; font-size: .82rem; }
 .guestbook-form input, .guestbook-form textarea {
   width: 100%;
@@ -142,6 +142,8 @@ main { flex: 1; }
 }
 .guestbook-form input:focus, .guestbook-form textarea:focus { border-color: var(--accent); }
 .guestbook-form button { min-height: 44px; padding: 0 17px; border-radius: 4px; color: var(--accent-dark); background: var(--accent); font-weight: 650; }
+.guestbook-auth-note { margin: 0; padding: 18px 4px; color: var(--muted); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.guestbook-auth-note a { color: var(--accent); }
 .guestbook-list { list-style: none; margin: 28px 0 0; padding: 0; border-top: 1px solid var(--line); }
 .guestbook-list li { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 28px; padding: 18px 4px; border-bottom: 1px solid var(--line); }
 .guestbook-head { display: grid; align-content: start; gap: 2px; }
@@ -192,8 +194,6 @@ main { flex: 1; }
   .post-card .card-meta, .post-card h3, .post-card > p { grid-column: 1; grid-row: auto; }
   .post-card .card-meta { display: flex; }
   .about-section { grid-template-columns: 1fr; gap: 22px; }
-  .guestbook-form { grid-template-columns: 1fr auto; }
-  .guestbook-form label:first-child { grid-column: 1 / -1; }
   .form-row { grid-template-columns: 1fr; }
 }
 
@@ -210,7 +210,6 @@ main { flex: 1; }
   .project-card { padding: 18px 2px; }
   .about-section { margin-top: 36px; padding: 34px 0; }
   .guestbook-form { grid-template-columns: 1fr; }
-  .guestbook-form label:first-child { grid-column: auto; }
   .guestbook-list li { grid-template-columns: 1fr; gap: 8px; }
   .guestbook-head { display: flex; justify-content: space-between; gap: 12px; }
   .auth-panel, .form-page { width: calc(100% - 24px); margin: 30px auto; padding: 22px; }

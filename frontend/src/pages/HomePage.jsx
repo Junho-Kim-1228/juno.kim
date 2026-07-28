@@ -25,7 +25,6 @@ export function HomePage() {
       <section className="hero-section page-section">
         <p className="eyebrow">JUNO KIM</p>
         <h1>김준호</h1>
-        <p className="hero-copy">재미로 만들고, 배우고, 기록합니다.</p>
         <div className="hero-actions">
           <Link to="/projects">Projects</Link>
           <Link to="/blog">Writing</Link>
@@ -55,7 +54,7 @@ export function HomePage() {
           <h2>김준호입니다.</h2>
         </div>
         <div className="about-copy">
-          <p>재미로 만든 프로젝트와 그 과정에서 배운 것들을 가볍게 기록하는 개인 공간입니다.</p>
+          <p>프로젝트와 그 과정에서 배운 것들을 가볍게 기록하는 개인 공간입니다.</p>
           <div className="about-links">
             <a href="https://github.com/Junho-Kim-1228" target="_blank" rel="noreferrer">GitHub</a>
             <a href="mailto:wnsgh1228_@naver.com">Email</a>

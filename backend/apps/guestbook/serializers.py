@@ -7,13 +7,7 @@ class GuestbookEntrySerializer(serializers.ModelSerializer):
     class Meta:
         model = GuestbookEntry
         fields = ("id", "name", "message", "created_at")
-        read_only_fields = ("id", "created_at")
-
-    def validate_name(self, value):
-        value = value.strip()
-        if len(value) < 2:
-            raise serializers.ValidationError("이름은 2자 이상 입력해 주세요.")
-        return value
+        read_only_fields = ("id", "name", "created_at")
 
     def validate_message(self, value):
         value = value.strip()
