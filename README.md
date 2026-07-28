@@ -61,6 +61,35 @@ $env:TEST_DATABASE_URL = 'sqlite:///:memory:'
 Remove-Item Env:TEST_DATABASE_URL
 ```
 
+### 로컬 통합 실행
+
+첫 번째 PowerShell에서 Django API를 실행합니다.
+
+```powershell
+Set-Location backend
+.\.venv\Scripts\python.exe .\manage.py runserver 127.0.0.1:8000
+```
+
+두 번째 PowerShell에서 React 개발 서버를 실행합니다.
+
+```powershell
+Set-Location frontend
+Copy-Item .env.example .env
+# .env의 VITE_API_BASE_URL을 http://127.0.0.1:8000/api/v1로 설정합니다.
+npm install
+npm run dev
+```
+
+Production build와 점검:
+
+```powershell
+npm run lint
+npm audit
+npm run build
+```
+
+프론트엔드 스타일은 CSS custom properties를 사용하는 단일 전역 CSS로 구성했습니다. 초기 기능 검증 단계에서 별도 CSS 프레임워크와 런타임 의존성을 늘리지 않으면서 색상, 간격, 반응형 breakpoint를 일관되게 관리할 수 있기 때문입니다.
+
 ## 환경변수와 보안
 
 - 실제 환경변수 파일과 비밀값은 Git에 커밋하지 않습니다.
