@@ -57,7 +57,6 @@ export function HomePage() {
           <p>프로젝트와 그 과정에서 배운 것들을 가볍게 기록하는 개인 공간입니다.</p>
           <div className="about-links">
             <a href="https://github.com/Junho-Kim-1228" target="_blank" rel="noreferrer">GitHub</a>
-            <a href="mailto:wnsgh1228_@naver.com">Email</a>
           </div>
         </div>
       </section>
