@@ -40,6 +40,7 @@ img { max-width: 100%; }
 .site-header a.active, .site-header a:hover { color: #111827; }
 .account-nav { justify-content: flex-end; gap: 14px; }
 .admin-link { padding-left: 14px; border-left: 1px solid var(--line); }
+.account-nav .admin-page-link { padding-right: 14px; color: var(--accent); border-right: 1px solid var(--line); }
 main { flex: 1; }
 .site-footer {
   width: min(1120px, calc(100% - 32px));

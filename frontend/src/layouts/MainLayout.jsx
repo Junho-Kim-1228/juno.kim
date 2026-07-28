@@ -24,6 +24,7 @@ export function MainLayout({ children }) {
         <div className="account-nav">
           {user ? (
             <>
+              {user.is_staff && <a className="admin-page-link" href="/admin/">관리자 페이지</a>}
               <Link to="/profile">{user.profile?.display_name || user.username}</Link>
               <button className="text-button" type="button" onClick={handleLogout}>로그아웃</button>
             </>
