@@ -22,12 +22,11 @@ export function HomePage() {
   return (
     <>
       <section className="hero-section page-section">
-        <p className="eyebrow">FULL-STACK DEVELOPER · CLOUD OPERATOR</p>
-        <h1>제품을 만들고,<br />운영 가능한 시스템으로 다듬습니다.</h1>
-        <p className="hero-copy">React와 Django로 사용자 경험을 만들고, AWS Linux에서 안전하게 운영한 과정과 배움을 기록합니다.</p>
+        <p className="eyebrow">JUNO.KIM</p>
+        <h1>프로젝트와 기록</h1>
         <div className="hero-actions">
           <Link className="button-link" to="/projects">프로젝트 보기</Link>
-          <Link className="button-link secondary" to="/blog">기술 기록 읽기</Link>
+          <Link className="button-link secondary" to="/blog">기록 보기</Link>
         </div>
       </section>
       {error && <ErrorState error={error} />}
