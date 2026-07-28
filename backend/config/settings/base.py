@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     "apps.projects.apps.ProjectsConfig",
     "apps.posts.apps.PostsConfig",
     "apps.comments.apps.CommentsConfig",
+    "apps.guestbook.apps.GuestbookConfig",
 ]
 
 MIDDLEWARE = [
@@ -115,6 +116,7 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 12,
     "DEFAULT_THROTTLE_RATES": {
         "auth": "10/minute",
+        "guestbook": "3/minute",
     },
 }
 

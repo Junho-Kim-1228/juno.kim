@@ -13,6 +13,7 @@ urlpatterns = [
     path("api/v1/", include("apps.projects.urls")),
     path("api/v1/", include("apps.posts.urls")),
     path("api/v1/", include("apps.comments.urls")),
+    path("api/v1/", include("apps.guestbook.urls")),
 ]
 
 if settings.DEBUG:
