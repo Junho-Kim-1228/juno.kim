@@ -2,7 +2,7 @@ from django.contrib import admin
 
 from apps.admin_mixins import StaffContentAdminMixin
 
-from .models import Category, Post, Tag
+from .models import Category, ContentImage, Post, Tag
 
 
 @admin.register(Category)
@@ -18,6 +18,14 @@ class TagAdmin(StaffContentAdminMixin, admin.ModelAdmin):
     list_display = ("name", "slug")
     search_fields = ("name",)
     readonly_fields = ("slug",)
+
+
+@admin.register(ContentImage)
+class ContentImageAdmin(StaffContentAdminMixin, admin.ModelAdmin):
+    list_display = ("id", "uploader", "created_at")
+    search_fields = ("uploader__username", "uploader__email", "image")
+    readonly_fields = ("created_at",)
+    list_select_related = ("uploader",)
 
 
 @admin.register(Post)

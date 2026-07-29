@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 
 import { projectApi } from '../api/projects'
 import { ErrorState, LoadingState } from '../components/AsyncState'
+import { MarkdownContent } from '../components/MarkdownContent'
 import { useAuth } from '../hooks/useAuth'
 
 export function ProjectDetailPage() {
@@ -21,7 +22,7 @@ export function ProjectDetailPage() {
       <p className="eyebrow">PROJECT</p><h1>{project.title}</h1><p className="lead">{project.summary}</p>
       <div className="chip-row">{project.technologies.map((item) => <span className="chip" key={item}>{item}</span>)}</div>
       {project.thumbnail && <img className="cover-image" src={project.thumbnail} alt="" />}
-      <div className="prose">{project.description}</div>
+      <MarkdownContent>{project.description}</MarkdownContent>
       <div className="detail-actions">
         {project.repository_url && <a className="button-link secondary" href={project.repository_url} target="_blank" rel="noreferrer">저장소</a>}
         {project.live_url && <a className="button-link" href={project.live_url} target="_blank" rel="noreferrer">서비스 보기</a>}

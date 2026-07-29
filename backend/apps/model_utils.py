@@ -8,6 +8,12 @@ def validate_image_size(file):
         raise ValidationError("이미지는 10MB 이하여야 합니다.")
 
 
+def validate_content_image_size(file):
+    max_size = 5 * 1024 * 1024
+    if file.size > max_size:
+        raise ValidationError("본문 이미지는 5MB 이하여야 합니다.")
+
+
 def build_unique_slug(instance, value, *, max_length=220):
     base = slugify(value, allow_unicode=True) or "item"
     base = base[:max_length].strip("-") or "item"

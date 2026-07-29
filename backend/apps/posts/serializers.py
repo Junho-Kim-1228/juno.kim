@@ -3,7 +3,7 @@ from rest_framework import serializers
 
 from apps.users.serializers import UserSummarySerializer
 
-from .models import Category, Post, Tag
+from .models import Category, ContentImage, Post, Tag
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -18,6 +18,19 @@ class TagSerializer(serializers.ModelSerializer):
         model = Tag
         fields = ("id", "name", "slug")
         read_only_fields = ("id", "slug")
+
+
+class ContentImageSerializer(serializers.ModelSerializer):
+    url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ContentImage
+        fields = ("id", "image", "url", "created_at")
+        read_only_fields = ("id", "url", "created_at")
+        extra_kwargs = {"image": {"write_only": True}}
+
+    def get_url(self, obj):
+        return obj.image.url
 
 
 class PostSerializer(serializers.ModelSerializer):

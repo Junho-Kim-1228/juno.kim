@@ -135,6 +135,7 @@ REST_FRAMEWORK = {
         "verification_resend_ip_day": "20/day",
         "impersonation_report_user": "10/hour",
         "impersonation_report_ip": "20/hour",
+        "content_image_upload": "20/hour",
     },
 }
 

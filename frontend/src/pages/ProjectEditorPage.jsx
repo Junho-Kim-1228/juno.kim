@@ -3,6 +3,7 @@ import { useHistory, useParams } from 'react-router-dom'
 
 import { projectApi } from '../api/projects'
 import { ErrorState } from '../components/AsyncState'
+import { MarkdownEditor } from '../components/MarkdownEditor'
 
 const initialForm = { title: '', summary: '', description: '', technologies: '', repository_url: '', live_url: '', status: 'draft', is_featured: false, started_on: '', ended_on: '' }
 
@@ -44,7 +45,7 @@ export function ProjectEditorPage() {
       <form className="stack-form" onSubmit={submit}>
         <label>제목<input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} required /></label>
         <label>요약<input maxLength="300" value={form.summary} onChange={(event) => setForm({ ...form, summary: event.target.value })} required /></label>
-        <label>설명<textarea rows="12" value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} required /></label>
+        <MarkdownEditor label="설명" rows={12} value={form.description} onChange={(description) => setForm({ ...form, description })} required />
         <label>기술 스택 (쉼표로 구분)<input value={form.technologies} onChange={(event) => setForm({ ...form, technologies: event.target.value })} /></label>
         <div className="form-row"><label>저장소 URL<input type="url" value={form.repository_url} onChange={(event) => setForm({ ...form, repository_url: event.target.value })} /></label><label>서비스 URL<input type="url" value={form.live_url} onChange={(event) => setForm({ ...form, live_url: event.target.value })} /></label></div>
         <div className="form-row"><label>시작일<input type="date" value={form.started_on} onChange={(event) => setForm({ ...form, started_on: event.target.value })} /></label><label>종료일<input type="date" value={form.ended_on} onChange={(event) => setForm({ ...form, ended_on: event.target.value })} /></label></div>

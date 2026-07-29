@@ -3,6 +3,7 @@ import { useHistory, useLocation, useParams } from 'react-router-dom'
 
 import { postApi } from '../api/posts'
 import { ErrorState } from '../components/AsyncState'
+import { MarkdownEditor } from '../components/MarkdownEditor'
 import { useAuth } from '../hooks/useAuth'
 
 const initialForm = { title: '', excerpt: '', content: '', category_id: '', tag_ids: [], status: 'draft', is_featured: false }
@@ -63,7 +64,7 @@ export function PostEditorPage() {
   }
 
   return <section className="form-page page-section"><p className="eyebrow">POST EDITOR</p><h1>{isEditing ? '게시글 수정' : '새 글 작성'}</h1><form className="stack-form" onSubmit={submit}>
-    <label>제목<input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} required /></label><label>요약<input maxLength="320" value={form.excerpt} onChange={(event) => setForm({ ...form, excerpt: event.target.value })} required /></label><label>본문<textarea rows="18" value={form.content} onChange={(event) => setForm({ ...form, content: event.target.value })} required /></label>
+    <label>제목<input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} required /></label><label>요약<input maxLength="320" value={form.excerpt} onChange={(event) => setForm({ ...form, excerpt: event.target.value })} required /></label><MarkdownEditor label="본문" rows={18} value={form.content} onChange={(content) => setForm({ ...form, content })} required />
     <label>카테고리<select value={form.category_id} onChange={(event) => setForm({ ...form, category_id: Number(event.target.value) || '' })}><option value="">선택 안 함</option>{options.categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label>
     <fieldset><legend>태그</legend><div className="chip-row">{options.tags.map((tag) => <label className="check-label" key={tag.id}><input type="checkbox" checked={form.tag_ids.includes(tag.id)} onChange={() => toggleTag(tag.id)} /> {tag.name}</label>)}</div></fieldset>
     <label>대표 이미지<input ref={coverInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => { setCover(event.target.files[0] || null); setRemoveCover(false) }} /></label>

@@ -1,9 +1,17 @@
+import uuid
+from pathlib import Path
+
 from django.conf import settings
 from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.utils import timezone
 
-from apps.model_utils import build_unique_slug, validate_image_size
+from apps.model_utils import build_unique_slug, validate_content_image_size, validate_image_size
+
+
+def content_image_upload_to(instance, filename):
+    extension = Path(filename).suffix.lower()
+    return f"content/{timezone.now():%Y/%m}/{uuid.uuid4().hex}{extension}"
 
 
 class Category(models.Model):
@@ -39,6 +47,29 @@ class Tag(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class ContentImage(models.Model):
+    uploader = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="content_images",
+    )
+    image = models.ImageField(
+        "이미지",
+        upload_to=content_image_upload_to,
+        validators=[
+            FileExtensionValidator(["jpg", "jpeg", "png", "webp"]),
+            validate_content_image_size,
+        ],
+    )
+    created_at = models.DateTimeField("생성일", auto_now_add=True)
+
+    class Meta:
+        ordering = ("-created_at",)
+
+    def __str__(self):
+        return self.image.name
 
 
 class Post(models.Model):

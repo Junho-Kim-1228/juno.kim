@@ -1,10 +1,25 @@
 from django.db.models import Count, Q
-from rest_framework import viewsets
+from rest_framework import generics, parsers, viewsets
+from rest_framework.throttling import UserRateThrottle
 
 from apps.permissions import IsOwnerOrStaffOrReadOnly, IsStaffOrReadOnly, IsVerifiedUserOrStaffOrReadOnly
 
 from .models import Category, Post, Tag
-from .serializers import CategorySerializer, PostSerializer, TagSerializer
+from .serializers import CategorySerializer, ContentImageSerializer, PostSerializer, TagSerializer
+
+
+class ContentImageUploadThrottle(UserRateThrottle):
+    scope = "content_image_upload"
+
+
+class ContentImageUploadView(generics.CreateAPIView):
+    serializer_class = ContentImageSerializer
+    permission_classes = (IsVerifiedUserOrStaffOrReadOnly,)
+    parser_classes = (parsers.MultiPartParser, parsers.FormParser)
+    throttle_classes = (ContentImageUploadThrottle,)
+
+    def perform_create(self, serializer):
+        serializer.save(uploader=self.request.user)
 
 
 class CategoryViewSet(viewsets.ModelViewSet):

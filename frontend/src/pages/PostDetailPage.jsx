@@ -4,6 +4,7 @@ import { Link, useHistory, useParams } from 'react-router-dom'
 import { postApi } from '../api/posts'
 import { ErrorState, LoadingState } from '../components/AsyncState'
 import { CommentSection } from '../components/CommentSection'
+import { MarkdownContent } from '../components/MarkdownContent'
 import { useAuth } from '../hooks/useAuth'
 
 const statusLabels = { published: '공개', private: '비공개', draft: '임시저장' }
@@ -31,5 +32,5 @@ export function PostDetailPage() {
       setDeleting(false)
     }
   }
-  return <article className="detail-page post-detail-page page-section"><p className="eyebrow">{post.kind === 'technical' ? '기술 기록' : post.category?.name || '게시판'}</p><h1>{post.is_featured && <span className="notice-prefix">[공지]</span>}{post.title}</h1><p className="lead">{post.excerpt}</p><div className="post-byline"><span>{post.author.display_name || post.author.username}</span><time>{new Date(post.published_at || post.created_at).toLocaleDateString('ko-KR')}</time><span className={`visibility-label ${post.status}`}>{statusLabels[post.status]}</span>{canEdit && <><Link to={`${basePath}/${post.slug}/edit`}>수정</Link><button type="button" className="text-button danger" disabled={deleting} onClick={removePost}>{deleting ? '삭제 중…' : '삭제'}</button></>}</div>{post.cover_image && <img className="cover-image" src={post.cover_image} alt="" />}<div className="prose">{post.content}</div><CommentSection postSlug={post.slug} /></article>
+  return <article className="detail-page post-detail-page page-section"><p className="eyebrow">{post.kind === 'technical' ? '기술 기록' : post.category?.name || '게시판'}</p><h1>{post.is_featured && <span className="notice-prefix">[공지]</span>}{post.title}</h1><p className="lead">{post.excerpt}</p><div className="post-byline"><span>{post.author.display_name || post.author.username}</span><time>{new Date(post.published_at || post.created_at).toLocaleDateString('ko-KR')}</time><span className={`visibility-label ${post.status}`}>{statusLabels[post.status]}</span>{canEdit && <><Link to={`${basePath}/${post.slug}/edit`}>수정</Link><button type="button" className="text-button danger" disabled={deleting} onClick={removePost}>{deleting ? '삭제 중…' : '삭제'}</button></>}</div>{post.cover_image && <img className="cover-image" src={post.cover_image} alt="" />}<MarkdownContent>{post.content}</MarkdownContent><CommentSection postSlug={post.slug} /></article>
 }
