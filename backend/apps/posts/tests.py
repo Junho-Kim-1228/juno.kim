@@ -53,6 +53,25 @@ class PostAPITests(APITestCase):
         self.assertNotIn(self.draft.slug, slugs)
         self.assertNotIn(self.archived.slug, slugs)
 
+    def test_anonymous_user_can_filter_published_posts_by_category(self):
+        other_category = Category.objects.create(name="Daily")
+        Post.objects.create(
+            author=self.staff,
+            category=other_category,
+            title="Daily Post",
+            excerpt="excerpt",
+            content="content",
+            status=Post.Status.PUBLISHED,
+        )
+
+        response = self.client.get("/api/v1/posts/", {"category": self.category.slug})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            {item["slug"] for item in response.data["results"]},
+            {self.published.slug},
+        )
+
     def test_member_cannot_create_or_modify_post(self):
         self.client.force_authenticate(self.member)
         created = self.client.post(

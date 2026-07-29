@@ -10,14 +10,27 @@ export function PostsPage({ title = '게시판', eyebrow = '게시판', descript
   const { user } = useAuth()
   const location = useLocation()
   const category = new URLSearchParams(location.search).get('category')
+  const [categories, setCategories] = useState([])
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
   useEffect(() => {
+    postApi.categories().then(setCategories).catch(setError)
+  }, [])
+
+  useEffect(() => {
     setLoading(true)
+    setError(null)
     postApi.list(category ? { category } : {}).then(setPosts).catch(setError).finally(() => setLoading(false))
   }, [category])
 
-  return <section className="page-section board-page"><div className="section-heading"><div><p className="eyebrow">{eyebrow}</p><h1>{category ? `${category} 이야기` : title}</h1><p className="page-description">{description}</p></div>{user?.is_staff && <Link className="button-link small" to={writePath}>글쓰기</Link>}</div>{error && <ErrorState error={error} />}{loading ? <LoadingState /> : posts.length ? <div className="card-grid">{posts.map((post) => <PostCard key={post.id} post={post} />)}</div> : <p className="empty-row">아직 이 분류의 글이 없습니다.</p>}</section>
+  const selectedCategory = categories.find((item) => item.slug === category)
+
+  return <section className="page-section board-page"><div className="section-heading"><div><p className="eyebrow">{eyebrow}</p><h1>{selectedCategory ? `${selectedCategory.name} 이야기` : title}</h1><p className="page-description">{description}</p></div>{user?.is_staff && <Link className="button-link small" to={writePath}>글쓰기</Link>}</div>
+    <nav className="board-filters" aria-label="게시글 카테고리">
+      <Link className={!category ? 'active' : ''} to={location.pathname}>전체</Link>
+      {categories.map((item) => <Link className={category === item.slug ? 'active' : ''} key={item.id} to={`${location.pathname}?category=${encodeURIComponent(item.slug)}`}>{item.name}</Link>)}
+    </nav>
+    {error && <ErrorState error={error} />}{loading ? <LoadingState /> : posts.length ? <div className="card-grid">{posts.map((post) => <PostCard key={post.id} post={post} />)}</div> : <p className="empty-row">아직 이 분류의 글이 없습니다.</p>}</section>
 }

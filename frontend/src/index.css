@@ -101,6 +101,9 @@ main { flex: 1; }
 .category-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 30px; }
 .category-links a { padding: 6px 13px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font-size: .86rem; }
 .category-links a:hover { color: var(--accent); border-color: var(--accent); }
+.board-filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 2px 0 24px; }
+.board-filters a { padding: 6px 13px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font-size: .86rem; }
+.board-filters a:hover, .board-filters a.active { color: var(--accent); border-color: var(--accent); background: #f2f7f4; }
 .home-feed { padding-top: 30px; }
 
 .card-grid { border-top: 1px solid var(--line); }
