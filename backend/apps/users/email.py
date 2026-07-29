@@ -1,7 +1,12 @@
+import logging
+
 from django.conf import settings
 from django.core.mail import send_mail
 
 from .models import EmailVerificationToken
+
+
+logger = logging.getLogger(__name__)
 
 
 def send_verification_email(user):
@@ -19,3 +24,4 @@ def send_verification_email(user):
         recipient_list=[user.email],
         fail_silently=False,
     )
+    logger.info("verification_email_sent user_id=%s", user.pk)

@@ -1,3 +1,5 @@
+import logging
+
 from django.conf import settings
 from django.contrib.auth import authenticate
 from django.middleware.csrf import get_token
@@ -30,6 +32,9 @@ from .serializers import (
 )
 
 
+logger = logging.getLogger(__name__)
+
+
 @method_decorator(ensure_csrf_cookie, name="dispatch")
 class CsrfTokenView(APIView):
     permission_classes = (AllowAny,)
@@ -51,8 +56,13 @@ class RegistrationView(generics.CreateAPIView):
         try:
             send_verification_email(user)
             sent = True
-        except Exception:
+        except Exception as exc:
             # Never expose mail-provider details or a verification token to the client.
+            logger.warning(
+                "verification_email_send_failed context=registration user_id=%s error_type=%s",
+                user.pk,
+                type(exc).__name__,
+            )
             sent = False
         data = UserSerializer(user, context=self.get_serializer_context()).data
         data["verification_email_sent"] = sent
@@ -164,7 +174,12 @@ class ResendVerificationEmailView(APIView):
             return Response({"detail": "Email is already verified."})
         try:
             send_verification_email(request.user)
-        except Exception:
+        except Exception as exc:
+            logger.warning(
+                "verification_email_send_failed context=resend user_id=%s error_type=%s",
+                request.user.pk,
+                type(exc).__name__,
+            )
             return Response({"detail": "Unable to send verification email right now. Please try again later."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
         return Response({"detail": "Verification email sent."})
 
@@ -237,8 +252,12 @@ class MeView(generics.RetrieveUpdateAPIView):
         if user.email != old_email:
             try:
                 send_verification_email(user)
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.warning(
+                    "verification_email_send_failed context=email_change user_id=%s error_type=%s",
+                    user.pk,
+                    type(exc).__name__,
+                )
 
 
 class ProfileView(generics.RetrieveUpdateAPIView):

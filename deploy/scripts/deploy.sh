@@ -9,6 +9,7 @@ readonly PROTECTED_SERVICE="game-recruit-bot.service"
 readonly APP_SERVICE="${APP_NAME}.service"
 readonly NGINX_SITE="/etc/nginx/sites-available/${APP_NAME}.conf"
 readonly NGINX_SITE_BACKUP="${NGINX_SITE}.deploy-backup"
+readonly SYSTEMD_DIR="/etc/systemd/system"
 
 if [[ ${EUID} -ne 0 ]]; then
     echo "Run this script as root: sudo $0" >&2
@@ -78,6 +79,18 @@ if ! nginx -t; then
 fi
 rm -f "${NGINX_SITE_BACKUP}"
 
+install -o root -g root -m 0644 \
+    "${APP_ROOT}/deploy/systemd/juno-kim.service" \
+    "${SYSTEMD_DIR}/juno-kim.service"
+install -o root -g root -m 0644 \
+    "${APP_ROOT}/deploy/systemd/juno-kim-monitor.service" \
+    "${SYSTEMD_DIR}/juno-kim-monitor.service"
+install -o root -g root -m 0644 \
+    "${APP_ROOT}/deploy/systemd/juno-kim-monitor.timer" \
+    "${SYSTEMD_DIR}/juno-kim-monitor.timer"
+systemctl daemon-reload
+systemctl enable --now juno-kim-monitor.timer
+
 systemctl restart "${APP_SERVICE}"
 systemctl reload nginx
 
@@ -98,6 +111,7 @@ for attempt in $(seq 1 20); do
 done
 
 systemctl is-active --quiet "${APP_SERVICE}"
+systemctl is-active --quiet juno-kim-monitor.timer
 systemctl is-active --quiet "${PROTECTED_SERVICE}"
 
 echo "Deployment complete: $(sudo -u "${APP_USER}" git -C "${APP_ROOT}" rev-parse --short HEAD)"

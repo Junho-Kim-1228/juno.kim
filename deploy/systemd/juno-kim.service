@@ -31,6 +31,8 @@ ReadWritePaths=/var/www/juno-kim/backend/media
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=juno-kim
+LogRateLimitIntervalSec=30s
+LogRateLimitBurst=200
 
 [Install]
 WantedBy=multi-user.target
