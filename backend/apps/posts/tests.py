@@ -46,12 +46,14 @@ class PostAPITests(APITestCase):
 
     def test_anonymous_user_only_sees_published_posts(self):
         response = self.client.get("/api/v1/posts/")
+        drafts_response = self.client.get("/api/v1/posts/", {"scope": "drafts"})
         slugs = {item["slug"] for item in response.data["results"]}
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn(self.published.slug, slugs)
         self.assertNotIn(self.draft.slug, slugs)
         self.assertNotIn(self.private.slug, slugs)
+        self.assertEqual(drafts_response.data["results"], [])
 
     def test_anonymous_user_can_filter_published_posts_by_category(self):
         other_category = Category.objects.create(name="Daily")
@@ -117,15 +119,25 @@ class PostAPITests(APITestCase):
         self.assertEqual(self.published.status, Post.Status.PUBLISHED)
         self.assertFalse(self.published.is_featured)
 
-    def test_member_can_see_own_draft_but_not_another_users_private_post(self):
+    def test_member_draft_is_only_listed_in_personal_draft_storage(self):
+        other_draft = Post.objects.create(
+            author=self.staff,
+            title="Other Draft",
+            excerpt="excerpt",
+            content="content",
+        )
         self.client.force_authenticate(self.member)
 
         listing = self.client.get("/api/v1/posts/")
+        draft_listing = self.client.get("/api/v1/posts/", {"scope": "drafts"})
         detail = self.client.get(f"/api/v1/posts/{self.draft.slug}/")
 
         slugs = {item["slug"] for item in listing.data["results"]}
-        self.assertIn(self.draft.slug, slugs)
+        draft_slugs = {item["slug"] for item in draft_listing.data["results"]}
+        self.assertNotIn(self.draft.slug, slugs)
         self.assertNotIn(self.private.slug, slugs)
+        self.assertEqual(draft_slugs, {self.draft.slug})
+        self.assertNotIn(other_draft.slug, draft_slugs)
         self.assertEqual(detail.status_code, status.HTTP_200_OK)
 
     def test_staff_can_see_non_public_posts_and_create_and_modify(self):
@@ -153,7 +165,7 @@ class PostAPITests(APITestCase):
             format="json",
         )
 
-        self.assertIn(self.draft.slug, slugs)
+        self.assertNotIn(self.draft.slug, slugs)
         self.assertIn(self.private.slug, slugs)
         self.assertEqual(created.status_code, status.HTTP_201_CREATED)
         self.assertEqual(updated.status_code, status.HTTP_200_OK)

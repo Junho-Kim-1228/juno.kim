@@ -36,18 +36,30 @@ class PostViewSet(viewsets.ModelViewSet):
         user = self.request.user
         category = self.request.query_params.get("category")
         kind = self.request.query_params.get("kind")
+        scope = self.request.query_params.get("scope")
         public_only = self.request.query_params.get("public_only") == "true"
         if category:
             queryset = queryset.filter(category__slug=category)
         if kind in Post.Kind.values:
             queryset = queryset.filter(kind=kind)
-        elif self.action == "list":
+        elif self.action == "list" and scope != "drafts":
             queryset = queryset.filter(kind=Post.Kind.BOARD)
+        if self.action == "list" and scope == "drafts":
+            if user.is_authenticated:
+                return queryset.filter(author=user, status=Post.Status.DRAFT)
+            return queryset.none()
         if public_only:
             return queryset.filter(status=Post.Status.PUBLISHED)
         if user.is_authenticated and user.is_staff:
+            if self.action == "list":
+                return queryset.exclude(status=Post.Status.DRAFT)
             return queryset
         if user.is_authenticated:
+            if self.action == "list":
+                return queryset.filter(
+                    Q(status=Post.Status.PUBLISHED)
+                    | Q(author=user, status=Post.Status.PRIVATE)
+                )
             return queryset.filter(Q(status=Post.Status.PUBLISHED) | Q(author=user))
         return queryset.filter(status=Post.Status.PUBLISHED)
 

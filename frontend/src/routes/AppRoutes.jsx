@@ -3,6 +3,7 @@ import { Redirect, Route, Switch } from 'react-router-dom'
 import { MainLayout } from '../layouts/MainLayout'
 import { HomePage } from '../pages/HomePage'
 import { DeveloperPage } from '../pages/DeveloperPage'
+import { DraftsPage } from '../pages/DraftsPage'
 import { GuestbookPage } from '../pages/GuestbookPage'
 import { LoginPage } from '../pages/LoginPage'
 import { NotFoundPage } from '../pages/NotFoundPage'
@@ -27,6 +28,7 @@ export function AppRoutes() {
     <Route exact path="/register" component={RegisterPage} />
     <Route exact path="/verify-email" component={VerifyEmailPage} />
     <ProtectedRoute exact path="/profile" component={ProfilePage} />
+    <ProtectedRoute exact path="/drafts" component={DraftsPage} verifiedOnly fallbackPath="/profile" />
     <ProtectedRoute exact path="/projects/new" component={ProjectEditorPage} staffOnly fallbackPath="/projects" />
     <ProtectedRoute exact path="/projects/:slug/edit" component={ProjectEditorPage} staffOnly fallbackPath="/projects" />
     <Route exact path="/projects/:slug" component={ProjectDetailPage} />

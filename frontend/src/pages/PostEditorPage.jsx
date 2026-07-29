@@ -50,7 +50,8 @@ export function PostEditorPage() {
     if (removeCover) payload.append('remove_cover_image', 'true')
     try {
       const post = isEditing ? await postApi.update(slug, payload) : await postApi.create(payload)
-      history.push(`${post.kind === 'technical' ? '/blog' : '/board'}/${post.slug}`)
+      if (post.status === 'draft') history.push('/drafts')
+      else history.push(`${post.kind === 'technical' ? '/blog' : '/board'}/${post.slug}`)
     } catch (requestError) { setError(requestError) }
   }
 
@@ -68,6 +69,6 @@ export function PostEditorPage() {
     <label>대표 이미지<input ref={coverInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => { setCover(event.target.files[0] || null); setRemoveCover(false) }} /></label>
     {isEditing && form.cover_image && <div className="editor-cover"><img src={form.cover_image} alt="현재 대표 이미지" />{removeCover ? <><p>저장하면 대표 이미지가 제거됩니다.</p><button type="button" className="text-button" onClick={() => setRemoveCover(false)}>제거 취소</button></> : <button type="button" className="text-button danger" onClick={removeCurrentCover}>대표 이미지 제거</button>}</div>}
     {user.is_staff && <label>게시 위치<select value={form.kind || editorKind} onChange={(event) => setForm({ ...form, kind: event.target.value })}><option value="board">게시판 글</option><option value="technical">기술 기록</option></select></label>}
-    <div className={user.is_staff ? 'form-row' : undefined}><label>공개 상태<select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value })}><option value="published">공개</option><option value="private">비공개</option><option value="draft">임시저장</option></select><small className="form-note">비공개와 임시저장은 작성자와 관리자만 볼 수 있습니다.</small></label>{user.is_staff && <label className="check-label"><input type="checkbox" checked={form.is_featured} onChange={(event) => setForm({ ...form, is_featured: event.target.checked })} /> 공지 게시글</label>}</div>{error && <ErrorState error={error} />}<button type="submit">저장</button>
+    <div className={user.is_staff ? 'form-row' : undefined}><label>공개 상태<select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value })}><option value="published">공개</option><option value="private">비공개</option><option value="draft">임시저장</option></select><small className="form-note">비공개는 작성자와 관리자만 볼 수 있고, 임시저장은 내 보관함에 저장됩니다.</small></label>{user.is_staff && <label className="check-label"><input type="checkbox" checked={form.is_featured} onChange={(event) => setForm({ ...form, is_featured: event.target.checked })} /> 공지 게시글</label>}</div>{error && <ErrorState error={error} />}<button type="submit">저장</button>
   </form></section>
 }

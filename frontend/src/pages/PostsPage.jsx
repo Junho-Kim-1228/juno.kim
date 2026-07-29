@@ -28,7 +28,7 @@ export function PostsPage({ title = '게시판', eyebrow = '게시판', descript
   const selectedCategory = categories.find((item) => item.slug === category)
   const canWrite = user?.is_staff || (allowMemberWriting && user?.email_verified)
 
-  return <section className="page-section board-page"><div className="section-heading"><div><p className="eyebrow">{eyebrow}</p><h1>{selectedCategory ? `${selectedCategory.name} 이야기` : title}</h1><p className="page-description">{description}</p></div>{canWrite && <Link className="button-link small" to={writePath}>글쓰기</Link>}</div>
+  return <section className="page-section board-page"><div className="section-heading"><div><p className="eyebrow">{eyebrow}</p><h1>{selectedCategory ? `${selectedCategory.name} 이야기` : title}</h1><p className="page-description">{description}</p></div>{canWrite && <div className="section-actions">{allowMemberWriting && <Link className="button-link secondary small" to="/drafts">임시저장 보관함</Link>}<Link className="button-link small" to={writePath}>글쓰기</Link></div>}</div>
     <nav className="board-filters" aria-label="게시글 카테고리">
       <Link className={!category ? 'active' : ''} to={location.pathname}>전체</Link>
       {categories.map((item) => <Link className={category === item.slug ? 'active' : ''} key={item.id} to={`${location.pathname}?category=${encodeURIComponent(item.slug)}`}>{item.name}</Link>)}

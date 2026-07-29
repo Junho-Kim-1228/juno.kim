@@ -77,6 +77,11 @@ class VerifiedMemberPostWriteTests(APITestCase):
         self.assertEqual(post.status, Post.Status.DRAFT)
         self.assertFalse(post.is_featured)
 
+        listing = self.client.get("/api/v1/posts/")
+        draft_listing = self.client.get("/api/v1/posts/", {"scope": "drafts"})
+        self.assertNotIn(post.slug, {item["slug"] for item in listing.data["results"]})
+        self.assertIn(post.slug, {item["slug"] for item in draft_listing.data["results"]})
+
         self.client.force_authenticate(None)
         private_detail = self.client.get(f"/api/v1/posts/{post.slug}/")
         self.assertEqual(private_detail.status_code, status.HTTP_404_NOT_FOUND)

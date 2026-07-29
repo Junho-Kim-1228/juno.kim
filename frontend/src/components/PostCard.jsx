@@ -11,14 +11,15 @@ function formatDate(value) {
   }).format(new Date(value))
 }
 
-export function PostCard({ post, basePath = '/board' }) {
+export function PostCard({ post, basePath }) {
+  const postBasePath = basePath || (post.kind === 'technical' ? '/blog' : '/board')
   return (
     <article className="card post-card">
       <div className="card-meta">
         <span>{formatDate(post.published_at || post.created_at)}</span>
         <span>{post.category?.name || '기록'}</span>
       </div>
-      <h3><Link to={`${basePath}/${post.slug}`}>{post.is_featured && <span className="notice-prefix">[공지]</span>}{statusLabels[post.status] && <span className={`post-status-prefix ${post.status}`}>[{statusLabels[post.status]}]</span>}{post.title}</Link></h3>
+      <h3><Link to={`${postBasePath}/${post.slug}`}>{post.is_featured && <span className="notice-prefix">[공지]</span>}{statusLabels[post.status] && <span className={`post-status-prefix ${post.status}`}>[{statusLabels[post.status]}]</span>}{post.title}</Link></h3>
       <p>{post.excerpt}</p>
     </article>
   )
