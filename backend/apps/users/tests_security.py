@@ -41,6 +41,87 @@ class EmailVerificationAPITests(APITestCase):
         self.assertEqual(reused.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertTrue(user.email_verified)
 
+    def test_registration_rate_limit_caps_initial_verification_email_by_ip(self):
+        responses = []
+        for index in range(3):
+            responses.append(
+                self.client.post(
+                    "/api/v1/auth/register/",
+                    {
+                        "username": f"registration_rate_{index}",
+                        "email": f"registration-rate-{index}@example.com",
+                        "password": "StrongTemporary!2026",
+                    },
+                    format="json",
+                    HTTP_X_FORWARDED_FOR="203.0.113.10",
+                    **self.headers,
+                )
+            )
+
+        self.assertEqual(
+            [response.status_code for response in responses[:2]],
+            [status.HTTP_201_CREATED] * 2,
+        )
+        self.assertEqual(responses[2].status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+        self.assertEqual(len(mail.outbox), 2)
+        self.assertFalse(User.objects.filter(username="registration_rate_2").exists())
+
+    def test_registration_rate_limit_is_independent_per_ip(self):
+        for index in range(2):
+            response = self.client.post(
+                "/api/v1/auth/register/",
+                {
+                    "username": f"first_ip_{index}",
+                    "email": f"first-ip-{index}@example.com",
+                    "password": "StrongTemporary!2026",
+                },
+                format="json",
+                HTTP_X_FORWARDED_FOR="203.0.113.20",
+                **self.headers,
+            )
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        other_ip = self.client.post(
+            "/api/v1/auth/register/",
+            {
+                "username": "second_ip_user",
+                "email": "second-ip@example.com",
+                "password": "StrongTemporary!2026",
+            },
+            format="json",
+            HTTP_X_FORWARDED_FOR="203.0.113.21",
+            **self.headers,
+        )
+        self.assertEqual(other_ip.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(len(mail.outbox), 3)
+
+    def test_verification_resend_rejects_an_immediate_repeat(self):
+        member = User.objects.create_user(
+            username="resend_rate_user",
+            email="resend-rate@example.com",
+            password="StrongTemporary!2026",
+        )
+        self.client.force_authenticate(member)
+
+        first = self.client.post(
+            "/api/v1/auth/resend-verification/",
+            {},
+            format="json",
+            HTTP_X_FORWARDED_FOR="203.0.113.30",
+            **self.headers,
+        )
+        repeated = self.client.post(
+            "/api/v1/auth/resend-verification/",
+            {},
+            format="json",
+            HTTP_X_FORWARDED_FOR="203.0.113.30",
+            **self.headers,
+        )
+
+        self.assertEqual(first.status_code, status.HTTP_200_OK)
+        self.assertEqual(repeated.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+        self.assertEqual(len(mail.outbox), 1)
+
     def test_unverified_user_cannot_write_comment_or_guestbook(self):
         author = User.objects.create_user(username="post_author", email="post-author@example.com", password="StrongTemporary!2026")
         author.email_verified = True
@@ -63,8 +144,14 @@ class EmailVerificationAPITests(APITestCase):
         self.assertEqual(responses[3].status_code, status.HTTP_429_TOO_MANY_REQUESTS)
 
     def test_reserved_and_confusable_username_or_display_name_is_rejected(self):
-        for username in ("juno", "Juno", "ｊｕｎｏ", "juno_kim", "admin", "official", "juno_kim_official"):
-            response = self.client.post("/api/v1/auth/register/", {"username": username, "email": f"{username.encode('unicode_escape').decode()}@example.com", "password": "StrongTemporary!2026"}, format="json", **self.headers)
+        for index, username in enumerate(("juno", "Juno", "ｊｕｎｏ", "juno_kim", "admin", "official", "juno_kim_official")):
+            response = self.client.post(
+                "/api/v1/auth/register/",
+                {"username": username, "email": f"{username.encode('unicode_escape').decode()}@example.com", "password": "StrongTemporary!2026"},
+                format="json",
+                HTTP_X_FORWARDED_FOR=f"203.0.113.{100 + index}",
+                **self.headers,
+            )
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
         member = User.objects.create_user(username="normal_user", email="normal@example.com", password="StrongTemporary!2026")

@@ -50,12 +50,36 @@ class GuestbookIPThrottle(IPRateThrottle):
     scope = "guestbook_ip"
 
 
+class RegistrationIPBurstThrottle(IPRateThrottle):
+    scope = "registration_ip_burst"
+
+
+class RegistrationIPHourlyThrottle(IPRateThrottle):
+    scope = "registration_ip_hour"
+
+
+class RegistrationIPDailyThrottle(IPRateThrottle):
+    scope = "registration_ip_day"
+
+
+class VerificationResendAccountBurstThrottle(AccountRateThrottle):
+    scope = "verification_resend_user_burst"
+
+
 class VerificationResendAccountThrottle(AccountRateThrottle):
     scope = "verification_resend_user"
 
 
+class VerificationResendAccountDailyThrottle(AccountRateThrottle):
+    scope = "verification_resend_user_day"
+
+
 class VerificationResendIPThrottle(IPRateThrottle):
     scope = "verification_resend_ip"
+
+
+class VerificationResendIPDailyThrottle(IPRateThrottle):
+    scope = "verification_resend_ip_day"
 
 
 class ImpersonationReportAccountThrottle(AccountRateThrottle):

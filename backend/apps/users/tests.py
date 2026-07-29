@@ -1,3 +1,4 @@
+from django.core.cache import cache
 from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
@@ -19,6 +20,7 @@ class CustomUserModelTests(TestCase):
 
 class AuthenticationAPITests(APITestCase):
     def setUp(self):
+        cache.clear()
         self.client = APIClient(enforce_csrf_checks=True)
         response = self.client.get("/api/v1/auth/csrf/")
         self.csrf_token = response.data["csrfToken"]

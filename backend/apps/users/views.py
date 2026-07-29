@@ -21,7 +21,13 @@ from apps.permissions import IsVerifiedUserOrReadOnly
 from .security import (
     ImpersonationReportAccountThrottle,
     ImpersonationReportIPThrottle,
+    RegistrationIPBurstThrottle,
+    RegistrationIPDailyThrottle,
+    RegistrationIPHourlyThrottle,
+    VerificationResendAccountBurstThrottle,
+    VerificationResendAccountDailyThrottle,
     VerificationResendAccountThrottle,
+    VerificationResendIPDailyThrottle,
     VerificationResendIPThrottle,
 )
 from .serializers import (
@@ -47,8 +53,11 @@ class CsrfTokenView(APIView):
 class RegistrationView(generics.CreateAPIView):
     permission_classes = (AllowAny,)
     serializer_class = RegistrationSerializer
-    throttle_classes = (ScopedRateThrottle,)
-    throttle_scope = "auth"
+    throttle_classes = (
+        RegistrationIPBurstThrottle,
+        RegistrationIPHourlyThrottle,
+        RegistrationIPDailyThrottle,
+    )
 
     def create(self, request, *args, **kwargs):
         response = super().create(request, *args, **kwargs)
@@ -167,7 +176,13 @@ class VerifyEmailView(APIView):
 @method_decorator(csrf_protect, name="dispatch")
 class ResendVerificationEmailView(APIView):
     permission_classes = (IsAuthenticated,)
-    throttle_classes = (VerificationResendAccountThrottle, VerificationResendIPThrottle)
+    throttle_classes = (
+        VerificationResendAccountBurstThrottle,
+        VerificationResendAccountThrottle,
+        VerificationResendAccountDailyThrottle,
+        VerificationResendIPThrottle,
+        VerificationResendIPDailyThrottle,
+    )
 
     def post(self, request):
         if request.user.email_verified:
