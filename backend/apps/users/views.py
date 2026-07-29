@@ -13,6 +13,9 @@ from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .cookies import delete_refresh_cookie, set_refresh_cookie
+from .email import send_verification_email
+from .models import EmailVerificationToken
+from .security import VerificationResendAccountThrottle, VerificationResendIPThrottle
 from .serializers import (
     LoginSerializer,
     ProfileSerializer,
@@ -39,7 +42,15 @@ class RegistrationView(generics.CreateAPIView):
     def create(self, request, *args, **kwargs):
         response = super().create(request, *args, **kwargs)
         user = self.get_queryset().get(username=response.data["username"])
-        return Response(UserSerializer(user, context=self.get_serializer_context()).data, status=201)
+        try:
+            send_verification_email(user)
+            sent = True
+        except Exception:
+            # Never expose mail-provider details or a verification token to the client.
+            sent = False
+        data = UserSerializer(user, context=self.get_serializer_context()).data
+        data["verification_email_sent"] = sent
+        return Response(data, status=201)
 
     def get_queryset(self):
         from .models import User
@@ -118,12 +129,55 @@ class LogoutView(APIView):
         return response
 
 
+@method_decorator(csrf_protect, name="dispatch")
+class VerifyEmailView(APIView):
+    permission_classes = (AllowAny,)
+    throttle_classes = (ScopedRateThrottle,)
+    throttle_scope = "auth"
+
+    def post(self, request):
+        raw_token = str(request.data.get("token", ""))
+        record = EmailVerificationToken.consume(raw_token)
+        if not record:
+            return Response({"detail": "This verification link is invalid, expired, or already used."}, status=status.HTTP_400_BAD_REQUEST)
+        user = record.user
+        user.email_verified = True
+        from django.utils import timezone
+        user.email_verified_at = timezone.now()
+        user.save(update_fields=("email_verified", "email_verified_at"))
+        return Response({"detail": "Email verified."})
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class ResendVerificationEmailView(APIView):
+    permission_classes = (IsAuthenticated,)
+    throttle_classes = (VerificationResendAccountThrottle, VerificationResendIPThrottle)
+
+    def post(self, request):
+        if request.user.email_verified:
+            return Response({"detail": "Email is already verified."})
+        try:
+            send_verification_email(request.user)
+        except Exception:
+            return Response({"detail": "Unable to send verification email right now. Please try again later."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        return Response({"detail": "Verification email sent."})
+
+
 class MeView(generics.RetrieveUpdateAPIView):
     permission_classes = (IsAuthenticated,)
     serializer_class = UserSerializer
 
     def get_object(self):
         return self.request.user
+
+    def perform_update(self, serializer):
+        old_email = self.request.user.email
+        user = serializer.save()
+        if user.email != old_email:
+            try:
+                send_verification_email(user)
+            except Exception:
+                pass
 
 
 class ProfileView(generics.RetrieveUpdateAPIView):

@@ -8,6 +8,8 @@ from .views import (
     ProfileView,
     RefreshView,
     RegistrationView,
+    ResendVerificationEmailView,
+    VerifyEmailView,
 )
 
 
@@ -17,6 +19,8 @@ urlpatterns = [
     path("auth/login/", LoginView.as_view(), name="login"),
     path("auth/refresh/", RefreshView.as_view(), name="token-refresh"),
     path("auth/logout/", LogoutView.as_view(), name="logout"),
+    path("auth/verify-email/", VerifyEmailView.as_view(), name="verify-email"),
+    path("auth/resend-verification/", ResendVerificationEmailView.as_view(), name="resend-verification"),
     path("auth/me/", MeView.as_view(), name="me"),
     path("auth/profile/", ProfileView.as_view(), name="profile"),
 ]

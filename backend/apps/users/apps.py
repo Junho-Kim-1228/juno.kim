@@ -6,4 +6,5 @@ class UsersConfig(AppConfig):
     name = "apps.users"
 
     def ready(self):
+        from . import admin_site  # noqa: F401
         from . import signals  # noqa: F401

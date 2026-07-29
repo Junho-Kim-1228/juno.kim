@@ -29,6 +29,9 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "axes",
+    "django_otp",
+    "django_otp.plugins.otp_totp",
     "corsheaders",
     "rest_framework",
     "rest_framework_simplejwt.token_blacklist",
@@ -46,6 +49,8 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django_otp.middleware.OTPMiddleware",
+    "axes.middleware.AxesMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -116,9 +121,27 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 12,
     "DEFAULT_THROTTLE_RATES": {
         "auth": "10/minute",
-        "guestbook": "3/minute",
+        "comment_user": "5/minute",
+        "comment_ip": "10/minute",
+        "guestbook_user": "3/minute",
+        "guestbook_ip": "5/minute",
+        "verification_resend_user": "3/hour",
+        "verification_resend_ip": "10/hour",
     },
 }
+
+# django-axes applies the same lockout policy to the API and Django Admin.
+# Both the account name and source IP are part of the key.
+AUTHENTICATION_BACKENDS = (
+    "axes.backends.AxesStandaloneBackend",
+    "django.contrib.auth.backends.ModelBackend",
+)
+AXES_FAILURE_LIMIT = 5
+AXES_COOLOFF_TIME = timedelta(minutes=30)
+AXES_LOCKOUT_PARAMETERS = ["username", "ip_address"]
+AXES_RESET_ON_SUCCESS = True
+AXES_USERNAME_FORM_FIELD = "username"
+AXES_CLIENT_IP_CALLABLE = "apps.users.security.get_client_ip"
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
@@ -137,5 +160,25 @@ JWT_REFRESH_COOKIE_NAME = env.str("JWT_REFRESH_COOKIE_NAME", default="refresh_to
 JWT_REFRESH_COOKIE_SECURE = env.bool("JWT_REFRESH_COOKIE_SECURE", default=not DEBUG)
 JWT_REFRESH_COOKIE_SAMESITE = "Lax"
 JWT_REFRESH_COOKIE_PATH = "/api/v1/auth/"
+
+SESSION_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SAMESITE = "Lax"
+
+EMAIL_BACKEND = env.str(
+    "EMAIL_BACKEND",
+    default="django.core.mail.backends.console.EmailBackend" if DEBUG else "django.core.mail.backends.smtp.EmailBackend",
+)
+EMAIL_HOST = env.str("EMAIL_HOST", default="")
+EMAIL_PORT = env.int("EMAIL_PORT", default=587)
+EMAIL_HOST_USER = env.str("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = env.str("EMAIL_HOST_PASSWORD", default="")
+EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
+DEFAULT_FROM_EMAIL = env.str("DEFAULT_FROM_EMAIL", default="noreply@juno.kim")
+FRONTEND_URL = env.str("FRONTEND_URL", default="http://localhost:5173" if DEBUG else "https://juno.kim").rstrip("/")
+EMAIL_VERIFICATION_TOKEN_TTL_HOURS = env.int("EMAIL_VERIFICATION_TOKEN_TTL_HOURS", default=24)
 
 ADMIN_URL = env.str("ADMIN_URL", default="admin/").strip("/") + "/"

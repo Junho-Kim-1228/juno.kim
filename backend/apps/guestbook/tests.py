@@ -21,6 +21,8 @@ class GuestbookAPITests(APITestCase):
             email="guestbook@example.com",
             password="StrongTemporary!2026",
         )
+        self.user.email_verified = True
+        self.user.save(update_fields=("email_verified",))
         self.user.profile.display_name = "로그인 사용자"
         self.user.profile.save(update_fields=("display_name", "updated_at"))
 

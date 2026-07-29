@@ -2,7 +2,8 @@ from django.db.models import Q
 from rest_framework import permissions, status, viewsets
 from rest_framework.response import Response
 
-from apps.permissions import IsOwnerOrStaffOrReadOnly
+from apps.permissions import IsOwnerOrStaffOrReadOnly, IsVerifiedUserOrReadOnly
+from apps.users.security import CommentAccountThrottle, CommentIPThrottle
 
 from .models import Comment
 from .serializers import CommentSerializer
@@ -10,7 +11,12 @@ from .serializers import CommentSerializer
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly, IsOwnerOrStaffOrReadOnly)
+    permission_classes = (IsVerifiedUserOrReadOnly, IsOwnerOrStaffOrReadOnly)
+
+    def get_throttles(self):
+        if self.action == "create":
+            return [CommentAccountThrottle(), CommentIPThrottle()]
+        return []
 
     def get_queryset(self):
         queryset = Comment.objects.select_related(

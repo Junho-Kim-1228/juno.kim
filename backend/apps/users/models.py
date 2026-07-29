@@ -1,8 +1,14 @@
+import hashlib
+import secrets
+from datetime import timedelta
+
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 from django.db import models
+from django.db import transaction
+from django.utils import timezone
 
 
 def validate_avatar_size(file):
@@ -16,10 +22,17 @@ class User(AbstractUser):
 
     email = models.EmailField("이메일", unique=True)
 
+    email_verified = models.BooleanField("email verified", default=False)
+    email_verified_at = models.DateTimeField("email verified at", null=True, blank=True)
+
     REQUIRED_FIELDS = ["email"]
 
     def __str__(self):
         return self.username
+
+    def save(self, *args, **kwargs):
+        self.email = self.email.strip().lower()
+        super().save(*args, **kwargs)
 
 
 class Profile(models.Model):
@@ -48,3 +61,82 @@ class Profile(models.Model):
 
     def __str__(self):
         return f"{self.user.username} profile"
+
+
+class EmailVerificationToken(models.Model):
+    """One-time email verification token. Only its SHA-256 digest is persisted."""
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="email_verification_tokens")
+    token_hash = models.CharField(max_length=64, unique=True)
+    expires_at = models.DateTimeField()
+    used_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-created_at",)
+
+    @classmethod
+    def issue_for(cls, user):
+        raw_token = secrets.token_urlsafe(32)
+        now = timezone.now()
+        cls.objects.filter(user=user, used_at__isnull=True).update(used_at=now)
+        record = cls.objects.create(
+            user=user,
+            token_hash=hashlib.sha256(raw_token.encode()).hexdigest(),
+            expires_at=now + timedelta(hours=settings.EMAIL_VERIFICATION_TOKEN_TTL_HOURS),
+        )
+        return raw_token, record
+
+    @classmethod
+    def consume(cls, raw_token):
+        digest = hashlib.sha256(raw_token.encode()).hexdigest()
+        with transaction.atomic():
+            record = cls.objects.select_for_update().select_related("user").filter(token_hash=digest, used_at__isnull=True).first()
+            if not record or record.expires_at <= timezone.now():
+                return None
+            record.used_at = timezone.now()
+            record.save(update_fields=("used_at",))
+            return record
+
+
+class AuditLog(models.Model):
+    class Action(models.TextChoices):
+        USER_PERMISSION_CHANGED = "user_permission_changed", "User permission changed"
+        USER_ACTIVATION_CHANGED = "user_activation_changed", "User activation changed"
+        CONTENT_STATUS_CHANGED = "content_status_changed", "Content status changed"
+        CONTENT_DELETED = "content_deleted", "Content deleted"
+        COMMENT_MODERATED = "comment_moderated", "Comment moderated"
+        GUESTBOOK_MODERATED = "guestbook_moderated", "Guestbook moderated"
+        MFA_ENROLLED = "mfa_enrolled", "MFA enrolled"
+        MFA_REMOVED = "mfa_removed", "MFA removed"
+        LOGIN_FAILED = "login_failed", "Login failed"
+        LOGIN_LOCKED = "login_locked", "Login locked"
+
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="audit_actions")
+    target_user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="audit_targets")
+    action = models.CharField(max_length=64, choices=Action.choices)
+    object_type = models.CharField(max_length=80, blank=True)
+    object_id = models.CharField(max_length=64, blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    details = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-created_at",)
+        verbose_name = "Audit log"
+        verbose_name_plural = "Audit logs"
+
+
+def write_audit_log(*, action, actor=None, target_user=None, request=None, obj=None, details=None):
+    """Persist only non-secret metadata for sensitive events."""
+    from .security import get_client_ip
+
+    return AuditLog.objects.create(
+        action=action,
+        actor=actor if getattr(actor, "is_authenticated", False) else None,
+        target_user=target_user,
+        ip_address=get_client_ip(request) or None if request else None,
+        object_type=obj._meta.label if obj is not None else "",
+        object_id=str(obj.pk) if obj is not None and obj.pk else "",
+        details=details or {},
+    )

@@ -42,4 +42,14 @@ export const authApi = {
     const { data } = await apiClient.patch('/auth/profile/', payload)
     return data
   },
+  async verifyEmail(token) {
+    await this.csrf()
+    const { data } = await apiClient.post('/auth/verify-email/', { token })
+    return data
+  },
+  async resendVerification() {
+    await this.csrf()
+    const { data } = await apiClient.post('/auth/resend-verification/')
+    return data
+  },
 }

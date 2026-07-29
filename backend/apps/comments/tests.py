@@ -24,6 +24,9 @@ class CommentAPITests(APITestCase):
             email="comment-other@example.com",
             password="StrongTemporary!2026",
         )
+        for user in (self.author, self.commenter, self.other):
+            user.email_verified = True
+            user.save(update_fields=("email_verified",))
         self.post = Post.objects.create(
             author=self.author,
             title="Published Post",

@@ -12,6 +12,7 @@ import { ProjectDetailPage } from '../pages/ProjectDetailPage'
 import { ProjectEditorPage } from '../pages/ProjectEditorPage'
 import { ProjectsPage } from '../pages/ProjectsPage'
 import { RegisterPage } from '../pages/RegisterPage'
+import { VerifyEmailPage } from '../pages/VerifyEmailPage'
 import { ProtectedRoute } from './ProtectedRoute'
 
 export function AppRoutes() {
@@ -19,6 +20,7 @@ export function AppRoutes() {
     <Route exact path="/" component={HomePage} />
     <Route exact path="/login" component={LoginPage} />
     <Route exact path="/register" component={RegisterPage} />
+    <Route exact path="/verify-email" component={VerifyEmailPage} />
     <ProtectedRoute exact path="/profile" component={ProfilePage} />
     <ProtectedRoute exact path="/projects/new" component={ProjectEditorPage} staffOnly fallbackPath="/projects" />
     <ProtectedRoute exact path="/projects/:slug/edit" component={ProjectEditorPage} staffOnly fallbackPath="/projects" />

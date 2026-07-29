@@ -1,4 +1,5 @@
 from django.contrib.auth import password_validation
+from django.db.models.functions import Lower
 from rest_framework import serializers
 
 from .models import Profile, User
@@ -39,9 +40,26 @@ class UserSerializer(serializers.ModelSerializer):
             "first_name",
             "last_name",
             "is_staff",
+            "email_verified",
             "profile",
         )
-        read_only_fields = ("id", "is_staff", "profile")
+        read_only_fields = ("id", "is_staff", "email_verified", "profile")
+
+    def validate_email(self, value):
+        normalized = value.strip().lower()
+        queryset = User.objects.annotate(email_normalized=Lower("email")).filter(email_normalized=normalized)
+        if self.instance:
+            queryset = queryset.exclude(pk=self.instance.pk)
+        if queryset.exists():
+            raise serializers.ValidationError("An account with this email already exists.")
+        return normalized
+
+    def update(self, instance, validated_data):
+        email_changed = "email" in validated_data and validated_data["email"] != instance.email
+        if email_changed:
+            validated_data["email_verified"] = False
+            validated_data["email_verified_at"] = None
+        return super().update(instance, validated_data)
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
@@ -54,6 +72,12 @@ class RegistrationSerializer(serializers.ModelSerializer):
     def validate_password(self, value):
         password_validation.validate_password(value)
         return value
+
+    def validate_email(self, value):
+        normalized = value.strip().lower()
+        if User.objects.annotate(email_normalized=Lower("email")).filter(email_normalized=normalized).exists():
+            raise serializers.ValidationError("An account with this email already exists.")
+        return normalized
 
     def create(self, validated_data):
         validated_data["is_staff"] = False
