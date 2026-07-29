@@ -146,6 +146,20 @@ main { flex: 1; }
 .developer-intro h1 { margin: 6px 0; font: 600 clamp(2.15rem, 5vw, 3.6rem)/1.25 "Malgun Gothic", "맑은 고딕", sans-serif; }
 .developer-intro p { max-width: 600px; margin: 0; color: var(--muted); }
 .developer-intro a { display: inline-block; margin-top: 16px; color: var(--accent); }
+.developer-theme {
+  min-height: 70vh;
+  padding-bottom: 46px;
+  color: #eeeae2;
+  background: #292d2a;
+  --surface: #303632;
+  --surface-2: #353c37;
+  --line: #454d48;
+  --muted: #b9b8b1;
+  --accent: #72c5ad;
+  --accent-dark: #17231f;
+}
+.developer-theme .card:hover { background: #343b37; }
+.developer-theme .state-message { margin-top: 0; padding-top: 54px; }
 .standalone-page { min-height: 64vh; padding-top: 66px; }
 
 .guestbook-section { padding-top: 54px; }
