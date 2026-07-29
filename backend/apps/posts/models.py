@@ -47,9 +47,9 @@ class Post(models.Model):
         TECHNICAL = "technical", "기술 기록"
 
     class Status(models.TextChoices):
-        DRAFT = "draft", "초안"
+        DRAFT = "draft", "임시저장"
         PUBLISHED = "published", "공개"
-        ARCHIVED = "archived", "보관"
+        PRIVATE = "private", "비공개"
 
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,

@@ -42,7 +42,7 @@ class VerifiedMemberPostWriteTests(APITestCase):
                 "category_id": self.category.id,
                 "tag_ids": [self.tag.id],
                 "kind": Post.Kind.TECHNICAL,
-                "status": Post.Status.ARCHIVED,
+                "status": Post.Status.PRIVATE,
                 "is_featured": True,
             },
             format="json",
@@ -52,14 +52,14 @@ class VerifiedMemberPostWriteTests(APITestCase):
         post = Post.objects.get(slug=created.data["slug"])
         self.assertEqual(post.author, self.member)
         self.assertEqual(post.kind, Post.Kind.BOARD)
-        self.assertEqual(post.status, Post.Status.PUBLISHED)
+        self.assertEqual(post.status, Post.Status.PRIVATE)
         self.assertFalse(post.is_featured)
 
         own_update = self.client.patch(
             f"/api/v1/posts/{post.slug}/",
             {
                 "title": "Edited Member Post",
-                "status": Post.Status.ARCHIVED,
+                "status": Post.Status.DRAFT,
                 "is_featured": True,
             },
             format="json",
@@ -74,8 +74,12 @@ class VerifiedMemberPostWriteTests(APITestCase):
         self.assertEqual(other_update.status_code, status.HTTP_403_FORBIDDEN)
         post.refresh_from_db()
         self.assertEqual(post.title, "Edited Member Post")
-        self.assertEqual(post.status, Post.Status.PUBLISHED)
+        self.assertEqual(post.status, Post.Status.DRAFT)
         self.assertFalse(post.is_featured)
+
+        self.client.force_authenticate(None)
+        private_detail = self.client.get(f"/api/v1/posts/{post.slug}/")
+        self.assertEqual(private_detail.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_verified_member_can_delete_own_post_but_not_another_members_post(self):
         own_post = Post.objects.create(

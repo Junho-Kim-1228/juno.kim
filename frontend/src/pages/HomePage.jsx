@@ -15,7 +15,7 @@ export function HomePage() {
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    postApi.list({ kind: 'board' }).then((items) => setPosts(items.slice(0, 5))).catch(setError).finally(() => setLoading(false))
+    postApi.list({ kind: 'board', public_only: 'true' }).then((items) => setPosts(items.slice(0, 5))).catch(setError).finally(() => setLoading(false))
     postApi.categories().then(setCategories).catch(setError)
   }, [])
 

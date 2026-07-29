@@ -36,12 +36,12 @@ class PostAPITests(APITestCase):
             excerpt="excerpt",
             content="content",
         )
-        self.archived = Post.objects.create(
+        self.private = Post.objects.create(
             author=self.staff,
-            title="Archived Post",
+            title="Private Post",
             excerpt="excerpt",
             content="content",
-            status=Post.Status.ARCHIVED,
+            status=Post.Status.PRIVATE,
         )
 
     def test_anonymous_user_only_sees_published_posts(self):
@@ -51,7 +51,7 @@ class PostAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn(self.published.slug, slugs)
         self.assertNotIn(self.draft.slug, slugs)
-        self.assertNotIn(self.archived.slug, slugs)
+        self.assertNotIn(self.private.slug, slugs)
 
     def test_anonymous_user_can_filter_published_posts_by_category(self):
         other_category = Category.objects.create(name="Daily")
@@ -107,7 +107,7 @@ class PostAPITests(APITestCase):
         )
         updated = self.client.patch(
             f"/api/v1/posts/{self.published.slug}/",
-            {"status": Post.Status.ARCHIVED, "is_featured": True},
+            {"status": Post.Status.PRIVATE, "is_featured": True},
             format="json",
         )
 
@@ -117,15 +117,16 @@ class PostAPITests(APITestCase):
         self.assertEqual(self.published.status, Post.Status.PUBLISHED)
         self.assertFalse(self.published.is_featured)
 
-    def test_member_cannot_see_own_draft(self):
+    def test_member_can_see_own_draft_but_not_another_users_private_post(self):
         self.client.force_authenticate(self.member)
 
         listing = self.client.get("/api/v1/posts/")
         detail = self.client.get(f"/api/v1/posts/{self.draft.slug}/")
 
         slugs = {item["slug"] for item in listing.data["results"]}
-        self.assertNotIn(self.draft.slug, slugs)
-        self.assertEqual(detail.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertIn(self.draft.slug, slugs)
+        self.assertNotIn(self.private.slug, slugs)
+        self.assertEqual(detail.status_code, status.HTTP_200_OK)
 
     def test_staff_can_see_non_public_posts_and_create_and_modify(self):
         self.client.force_authenticate(self.staff)
@@ -153,7 +154,7 @@ class PostAPITests(APITestCase):
         )
 
         self.assertIn(self.draft.slug, slugs)
-        self.assertIn(self.archived.slug, slugs)
+        self.assertIn(self.private.slug, slugs)
         self.assertEqual(created.status_code, status.HTTP_201_CREATED)
         self.assertEqual(updated.status_code, status.HTTP_200_OK)
         post = Post.objects.get(slug=created.data["slug"])

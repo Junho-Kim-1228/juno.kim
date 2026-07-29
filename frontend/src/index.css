@@ -117,6 +117,8 @@ main { flex: 1; }
 .card h3 { margin: 0; font-size: 1.2rem; font-weight: 590; line-height: 1.45; }
 .card h3 a:hover { color: var(--accent); }
 .notice-prefix { margin-right: .45em; color: var(--accent); font-weight: 650; }
+.post-status-prefix { margin-right: .45em; color: var(--muted); font-weight: 600; }
+.post-status-prefix.draft { color: #a86f2d; }
 .card p { margin: 6px 0 0; color: var(--muted); line-height: 1.7; }
 .project-card { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(300px, .85fr); gap: 38px; align-items: center; }
 .project-details { display: grid; gap: 13px; }
@@ -212,6 +214,9 @@ main { flex: 1; }
 .prose { margin: 38px 0; color: var(--muted); font-size: 1.04rem; line-height: 1.95; white-space: pre-wrap; }
 .post-byline { align-items: center; padding: 16px 0; border-bottom: 1px solid var(--line); }
 .post-byline a { color: var(--accent); }
+.visibility-label { padding: 1px 7px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: .72rem; }
+.visibility-label.published { color: var(--accent); border-color: var(--accent); }
+.visibility-label.draft { color: #a86f2d; border-color: #a86f2d; }
 
 .auth-panel, .form-page { width: min(720px, calc(100% - 32px)); margin: 52px auto; padding: 34px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
 .auth-panel { max-width: 520px; }
