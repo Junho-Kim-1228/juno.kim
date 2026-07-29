@@ -3,7 +3,7 @@ import secrets
 from datetime import timedelta
 
 from django.conf import settings
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, UserManager
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator, RegexValidator
 from django.db import models
@@ -19,10 +19,19 @@ def validate_avatar_size(file):
         raise ValidationError("프로필 이미지는 5MB 이하여야 합니다.")
 
 
+class SecureUserManager(UserManager):
+    """Apply public identity rules to manager-based account creation."""
+
+    def _create_user(self, username, email, password, **extra_fields):
+        username = validate_username(str(username).strip())
+        return super()._create_user(username, email, password, **extra_fields)
+
+
 class User(AbstractUser):
     """로그인, 권한, 계정 식별 정보를 관리합니다."""
 
     email = models.EmailField("이메일", unique=True)
+    objects = SecureUserManager()
 
     username = models.CharField(
         max_length=150,
@@ -38,7 +47,15 @@ class User(AbstractUser):
         return self.username
 
     def save(self, *args, **kwargs):
-        self.username = self.username.strip()
+        username = self.username.strip()
+        if self._state.adding:
+            self.username = validate_username(username)
+        elif self.pk:
+            previous_username = type(self).objects.filter(pk=self.pk).values_list("username", flat=True).first()
+            if previous_username != username:
+                self.username = validate_username(username)
+            else:
+                self.username = username
         self.email = self.email.strip().lower()
         super().save(*args, **kwargs)
 
@@ -99,6 +116,16 @@ class ImpersonationReport(models.Model):
             models.CheckConstraint(
                 condition=(models.Q(comment__isnull=False, guestbook_entry__isnull=True) | models.Q(comment__isnull=True, guestbook_entry__isnull=False)),
                 name="impersonation_report_has_one_target",
+            ),
+            models.UniqueConstraint(
+                fields=("reporter", "comment"),
+                condition=models.Q(comment__isnull=False),
+                name="unique_reporter_comment_impersonation_report",
+            ),
+            models.UniqueConstraint(
+                fields=("reporter", "guestbook_entry"),
+                condition=models.Q(guestbook_entry__isnull=False),
+                name="unique_reporter_guestbook_impersonation_report",
             ),
         ]
         verbose_name = "Impersonation report"

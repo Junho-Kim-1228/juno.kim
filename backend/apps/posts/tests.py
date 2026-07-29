@@ -9,12 +9,12 @@ from .models import Category, Post, Tag
 class PostAPITests(APITestCase):
     def setUp(self):
         self.member = User.objects.create_user(
-            username="post-member",
+            username="post_member",
             email="post-member@example.com",
             password="StrongTemporary!2026",
         )
         self.staff = User.objects.create_user(
-            username="post-staff",
+            username="post_editor",
             email="post-staff@example.com",
             password="StrongTemporary!2026",
             is_staff=True,

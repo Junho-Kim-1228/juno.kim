@@ -9,12 +9,12 @@ from .models import Project
 class ProjectAPITests(APITestCase):
     def setUp(self):
         self.member = User.objects.create_user(
-            username="project-member",
+            username="project_member",
             email="project-member@example.com",
             password="StrongTemporary!2026",
         )
         self.staff = User.objects.create_user(
-            username="project-staff",
+            username="project_editor",
             email="project-staff@example.com",
             password="StrongTemporary!2026",
             is_staff=True,

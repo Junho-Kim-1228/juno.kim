@@ -1,6 +1,9 @@
 from django.contrib import admin
 from django.core.cache import cache
 from django.core import mail
+from django.core.exceptions import ValidationError
+from django.core.management import call_command
+from django.db import IntegrityError, transaction
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from rest_framework import status
@@ -11,7 +14,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from apps.guestbook.models import GuestbookEntry
 from apps.posts.models import Post
 
-from .models import EmailVerificationToken, User
+from .models import EmailVerificationToken, ImpersonationReport, User
 
 
 @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
@@ -39,7 +42,7 @@ class EmailVerificationAPITests(APITestCase):
         self.assertTrue(user.email_verified)
 
     def test_unverified_user_cannot_write_comment_or_guestbook(self):
-        author = User.objects.create_user(username="post-author", email="post-author@example.com", password="StrongTemporary!2026")
+        author = User.objects.create_user(username="post_author", email="post-author@example.com", password="StrongTemporary!2026")
         author.email_verified = True
         author.save(update_fields=("email_verified",))
         post = Post.objects.create(author=author, title="Published", excerpt="excerpt", content="content", status=Post.Status.PUBLISHED)
@@ -51,7 +54,7 @@ class EmailVerificationAPITests(APITestCase):
         self.assertEqual(guestbook.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_guestbook_account_rate_limit_returns_429(self):
-        member = User.objects.create_user(username="rate-user", email="rate@example.com", password="StrongTemporary!2026")
+        member = User.objects.create_user(username="rate_user", email="rate@example.com", password="StrongTemporary!2026")
         member.email_verified = True
         member.save(update_fields=("email_verified",))
         self.client.force_authenticate(member)
@@ -60,15 +63,21 @@ class EmailVerificationAPITests(APITestCase):
         self.assertEqual(responses[3].status_code, status.HTTP_429_TOO_MANY_REQUESTS)
 
     def test_reserved_and_confusable_username_or_display_name_is_rejected(self):
-        for username in ("juno", "Juno", "ｊｕｎｏ", "juno_kim"):
+        for username in ("juno", "Juno", "ｊｕｎｏ", "juno_kim", "admin", "official", "juno_kim_official"):
             response = self.client.post("/api/v1/auth/register/", {"username": username, "email": f"{username.encode('unicode_escape').decode()}@example.com", "password": "StrongTemporary!2026"}, format="json", **self.headers)
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
         member = User.objects.create_user(username="normal_user", email="normal@example.com", password="StrongTemporary!2026")
         self.client.force_authenticate(member)
-        for display_name in ("김준호", "Juno Kim", "Ｊｕｎｏ", "관리자"):
+        for display_name in ("김준호", "Juno Kim", "Ｊｕｎｏ", "관리자", "Admin", "Official", "Juno Kim Official"):
             response = self.client.patch("/api/v1/auth/profile/", {"display_name": display_name}, format="json", **self.headers)
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_user_manager_rejects_reserved_username(self):
+        with self.assertRaises(ValidationError):
+            User.objects.create_user(username="administrator", email="administrator@example.com", password="StrongTemporary!2026")
+        safe_user = User.objects.create_user(username="stafford", email="stafford@example.com", password="StrongTemporary!2026")
+        self.assertEqual(safe_user.username, "stafford")
 
     def test_verified_user_can_report_impersonation_and_report_is_admin_registered(self):
         author = User.objects.create_user(username="reported_user", email="reported@example.com", password="StrongTemporary!2026")
@@ -83,17 +92,75 @@ class EmailVerificationAPITests(APITestCase):
         self.client.force_authenticate(reporter)
         response = self.client.post("/api/v1/reports/impersonation/", {"target_type": "comment", "target_id": comment.id, "reason": "looks misleading"}, format="json", **self.headers)
         guestbook_response = self.client.post("/api/v1/reports/impersonation/", {"target_type": "guestbook", "target_id": guestbook_entry.id, "reason": "looks misleading"}, format="json", **self.headers)
-        from .models import ImpersonationReport
-
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(guestbook_response.status_code, status.HTTP_201_CREATED)
         self.assertTrue(ImpersonationReport.objects.filter(comment=comment, reporter=reporter).exists())
         self.assertTrue(ImpersonationReport.objects.filter(guestbook_entry=guestbook_entry, reporter=reporter).exists())
         self.assertIn(ImpersonationReport, admin.site._registry)
 
+        duplicate = self.client.post("/api/v1/reports/impersonation/", {"target_type": "comment", "target_id": comment.id, "reason": "duplicate"}, format="json", **self.headers)
+        self.assertEqual(duplicate.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(ImpersonationReport.objects.filter(comment=comment, reporter=reporter).count(), 1)
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                ImpersonationReport.objects.create(reporter=reporter, comment=comment, reason="race")
+
+    def test_reports_hide_non_public_content_and_require_a_reason(self):
+        author = User.objects.create_user(username="hidden_author", email="hidden-author@example.com", password="StrongTemporary!2026")
+        reporter = User.objects.create_user(username="hidden_reporter", email="hidden-reporter@example.com", password="StrongTemporary!2026")
+        for user in (author, reporter):
+            user.email_verified = True
+            user.save(update_fields=("email_verified",))
+        published = Post.objects.create(author=author, title="Published", excerpt="excerpt", content="content", status=Post.Status.PUBLISHED)
+        draft = Post.objects.create(author=author, title="Draft", excerpt="excerpt", content="content")
+        hidden_comment = published.comments.create(author=author, content="hidden", is_active=False)
+        draft_comment = draft.comments.create(author=author, content="draft")
+        hidden_entry = GuestbookEntry.objects.create(author=author, name="hidden_author", message="hidden", is_visible=False)
+        self.client.force_authenticate(reporter)
+
+        for target_type, target_id in (("comment", hidden_comment.id), ("comment", draft_comment.id), ("guestbook", hidden_entry.id)):
+            response = self.client.post("/api/v1/reports/impersonation/", {"target_type": target_type, "target_id": target_id, "reason": "hidden"}, format="json", **self.headers)
+            self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+        empty_reason = self.client.post("/api/v1/reports/impersonation/", {"target_type": "comment", "target_id": hidden_comment.id, "reason": "   "}, format="json", **self.headers)
+        self.assertEqual(empty_reason.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_report_account_rate_limit_returns_429(self):
+        author = User.objects.create_user(username="report_rate_author", email="report-rate-author@example.com", password="StrongTemporary!2026")
+        reporter = User.objects.create_user(username="report_rate_user", email="report-rate-user@example.com", password="StrongTemporary!2026")
+        for user in (author, reporter):
+            user.email_verified = True
+            user.save(update_fields=("email_verified",))
+        post = Post.objects.create(author=author, title="Published", excerpt="excerpt", content="content", status=Post.Status.PUBLISHED)
+        comments = [post.comments.create(author=author, content=f"comment {index}") for index in range(11)]
+        self.client.force_authenticate(reporter)
+        responses = [
+            self.client.post("/api/v1/reports/impersonation/", {"target_type": "comment", "target_id": comment.id, "reason": "report"}, format="json", **self.headers)
+            for comment in comments
+        ]
+        self.assertEqual([response.status_code for response in responses[:10]], [status.HTTP_201_CREATED] * 10)
+        self.assertEqual(responses[10].status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+
+    def test_identity_conflict_command_is_read_only(self):
+        legacy = User(username="legacy-admin", email="legacy-admin@example.com", password="not-used")
+        User.objects.bulk_create([legacy])
+        output = []
+
+        class Capture:
+            def write(self, message, ending="\n"):
+                output.append(message)
+
+            def flush(self):
+                return None
+
+        call_command("check_identity_conflicts", stdout=Capture())
+        legacy.refresh_from_db()
+        self.assertEqual(legacy.username, "legacy-admin")
+        self.assertTrue(any("legacy-admin" in message for message in output))
+
     def test_guestbook_ip_rate_limit_is_independent_from_account_limit(self):
-        first = User.objects.create_user(username="ip-first", email="ip-first@example.com", password="StrongTemporary!2026")
-        second = User.objects.create_user(username="ip-second", email="ip-second@example.com", password="StrongTemporary!2026")
+        first = User.objects.create_user(username="ip_first", email="ip-first@example.com", password="StrongTemporary!2026")
+        second = User.objects.create_user(username="ip_second", email="ip-second@example.com", password="StrongTemporary!2026")
         for user in (first, second):
             user.email_verified = True
             user.save(update_fields=("email_verified",))
@@ -107,8 +174,8 @@ class EmailVerificationAPITests(APITestCase):
 
 class SecurityAdminAndTokenTests(TestCase):
     def setUp(self):
-        self.superuser = User.objects.create_superuser(username="root-user", email="root@example.com", password="StrongTemporary!2026")
-        self.staff = User.objects.create_user(username="content-staff", email="staff@example.com", password="StrongTemporary!2026", is_staff=True)
+        self.superuser = User.objects.create_superuser(username="root_user", email="root@example.com", password="StrongTemporary!2026")
+        self.staff = User.objects.create_user(username="content_editor", email="staff@example.com", password="StrongTemporary!2026", is_staff=True)
         self.member = User.objects.create_user(username="member", email="member@example.com", password="StrongTemporary!2026")
 
     def test_content_staff_cannot_access_user_management_but_superuser_can(self):

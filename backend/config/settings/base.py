@@ -127,6 +127,8 @@ REST_FRAMEWORK = {
         "guestbook_ip": "5/minute",
         "verification_resend_user": "3/hour",
         "verification_resend_ip": "10/hour",
+        "impersonation_report_user": "10/hour",
+        "impersonation_report_ip": "20/hour",
     },
 }
 

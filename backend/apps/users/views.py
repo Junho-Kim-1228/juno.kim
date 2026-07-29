@@ -16,7 +16,12 @@ from .cookies import delete_refresh_cookie, set_refresh_cookie
 from .email import send_verification_email
 from .models import EmailVerificationToken, ImpersonationReport
 from apps.permissions import IsVerifiedUserOrReadOnly
-from .security import VerificationResendAccountThrottle, VerificationResendIPThrottle
+from .security import (
+    ImpersonationReportAccountThrottle,
+    ImpersonationReportIPThrottle,
+    VerificationResendAccountThrottle,
+    VerificationResendIPThrottle,
+)
 from .serializers import (
     LoginSerializer,
     ProfileSerializer,
@@ -167,6 +172,7 @@ class ResendVerificationEmailView(APIView):
 @method_decorator(csrf_protect, name="dispatch")
 class ImpersonationReportCreateView(APIView):
     permission_classes = (IsVerifiedUserOrReadOnly,)
+    throttle_classes = (ImpersonationReportAccountThrottle, ImpersonationReportIPThrottle)
 
     def post(self, request):
         target_type = str(request.data.get("target_type", ""))
@@ -175,31 +181,43 @@ class ImpersonationReportCreateView(APIView):
         except (TypeError, ValueError):
             return Response({"detail": "Invalid report target."}, status=status.HTTP_400_BAD_REQUEST)
         reason = str(request.data.get("reason", "")).strip()
-        if len(reason) > 500:
-            return Response({"detail": "Report reason must be 500 characters or less."}, status=status.HTTP_400_BAD_REQUEST)
+        if not reason or len(reason) > 500:
+            return Response({"detail": "Report reason must be between 1 and 500 characters."}, status=status.HTTP_400_BAD_REQUEST)
 
         if target_type == "comment":
             from apps.comments.models import Comment
 
-            target = Comment.objects.filter(pk=target_id).first()
+            target = Comment.objects.filter(
+                pk=target_id,
+                is_active=True,
+                post__status="published",
+            ).first()
             if not target:
                 return Response({"detail": "Comment not found."}, status=status.HTTP_404_NOT_FOUND)
             if target.author_id == request.user.id:
                 return Response({"detail": "You cannot report your own content."}, status=status.HTTP_400_BAD_REQUEST)
-            if ImpersonationReport.objects.filter(reporter=request.user, comment=target).exists():
+            report, created = ImpersonationReport.objects.get_or_create(
+                reporter=request.user,
+                comment=target,
+                defaults={"reason": reason},
+            )
+            if not created:
                 return Response({"detail": "You have already reported this item."}, status=status.HTTP_400_BAD_REQUEST)
-            report = ImpersonationReport.objects.create(reporter=request.user, comment=target, reason=reason)
         elif target_type == "guestbook":
             from apps.guestbook.models import GuestbookEntry
 
-            target = GuestbookEntry.objects.filter(pk=target_id).first()
+            target = GuestbookEntry.objects.filter(pk=target_id, is_visible=True).first()
             if not target:
                 return Response({"detail": "Guestbook entry not found."}, status=status.HTTP_404_NOT_FOUND)
             if target.author_id == request.user.id:
                 return Response({"detail": "You cannot report your own content."}, status=status.HTTP_400_BAD_REQUEST)
-            if ImpersonationReport.objects.filter(reporter=request.user, guestbook_entry=target).exists():
+            report, created = ImpersonationReport.objects.get_or_create(
+                reporter=request.user,
+                guestbook_entry=target,
+                defaults={"reason": reason},
+            )
+            if not created:
                 return Response({"detail": "You have already reported this item."}, status=status.HTTP_400_BAD_REQUEST)
-            report = ImpersonationReport.objects.create(reporter=request.user, guestbook_entry=target, reason=reason)
         else:
             return Response({"detail": "Invalid report target."}, status=status.HTTP_400_BAD_REQUEST)
 

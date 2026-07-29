@@ -4,9 +4,26 @@ import unicodedata
 from django.core.exceptions import ValidationError
 
 
-RESERVED_IDENTITY_TERMS = {
-    "juno", "junho", "junokim", "kimjunho", "김준호",
-    "junokimsite", "junokimadmin", "운영자", "공식", "관리자", "사이트운영자",
+PERSONAL_IDENTITY_TERMS = {
+    "juno",
+    "junho",
+    "junokim",
+    "kimjunho",
+    "김준호",
+}
+AUTHORITY_IDENTITY_TERMS = {
+    "admin",
+    "administrator",
+    "official",
+    "operator",
+    "staff",
+    "support",
+    "owner",
+    "moderator",
+    "운영자",
+    "공식",
+    "관리자",
+    "사이트운영자",
 }
 USERNAME_PATTERN = re.compile(r"^[a-z0-9_]+$")
 DISPLAY_NAME_PATTERN = re.compile(r"^[a-zA-Z0-9가-힣 _.-]*$")
@@ -18,7 +35,18 @@ def normalize_identity(value):
 
 
 def is_reserved_identity(value):
-    return normalize_identity(value) in RESERVED_IDENTITY_TERMS
+    normalized = normalize_identity(value)
+    if not normalized:
+        return False
+    if any(term in normalized for term in PERSONAL_IDENTITY_TERMS):
+        return True
+    if normalized in AUTHORITY_IDENTITY_TERMS:
+        return True
+
+    raw_tokens = [
+        token for token in re.split(r"[\s_.\-]+", unicodedata.normalize("NFKC", value).casefold()) if token
+    ]
+    return any(token in AUTHORITY_IDENTITY_TERMS for token in raw_tokens)
 
 
 def validate_username(value):

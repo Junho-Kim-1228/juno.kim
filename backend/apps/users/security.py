@@ -56,3 +56,11 @@ class VerificationResendAccountThrottle(AccountRateThrottle):
 
 class VerificationResendIPThrottle(IPRateThrottle):
     scope = "verification_resend_ip"
+
+
+class ImpersonationReportAccountThrottle(AccountRateThrottle):
+    scope = "impersonation_report_user"
+
+
+class ImpersonationReportIPThrottle(IPRateThrottle):
+    scope = "impersonation_report_ip"

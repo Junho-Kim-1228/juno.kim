@@ -17,7 +17,7 @@ class GuestbookAPITests(APITestCase):
         response = self.client.get("/api/v1/auth/csrf/")
         self.csrf_headers = {"HTTP_X_CSRFTOKEN": response.data["csrfToken"]}
         self.user = User.objects.create_user(
-            username="guestbook-writer",
+            username="guestbook_writer",
             email="guestbook@example.com",
             password="StrongTemporary!2026",
         )
@@ -107,12 +107,12 @@ class GuestbookAdminPermissionTests(TestCase):
         self.factory = RequestFactory()
         self.model_admin = GuestbookEntryAdmin(GuestbookEntry, AdminSite())
         self.member = User.objects.create_user(
-            username="guestbook-member",
+            username="guestbook_member",
             email="guestbook-member@example.com",
             password="StrongTemporary!2026",
         )
         self.staff = User.objects.create_user(
-            username="guestbook-staff",
+            username="guestbook_editor",
             email="guestbook-staff@example.com",
             password="StrongTemporary!2026",
             is_staff=True,

@@ -10,7 +10,7 @@ from .models import Comment
 class CommentAPITests(APITestCase):
     def setUp(self):
         self.author = User.objects.create_user(
-            username="article-author",
+            username="article_author",
             email="article-author@example.com",
             password="StrongTemporary!2026",
         )
@@ -20,7 +20,7 @@ class CommentAPITests(APITestCase):
             password="StrongTemporary!2026",
         )
         self.other = User.objects.create_user(
-            username="comment-other",
+            username="comment_other",
             email="comment-other@example.com",
             password="StrongTemporary!2026",
         )

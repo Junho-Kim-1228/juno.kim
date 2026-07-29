@@ -8,13 +8,13 @@ from .models import User
 class CustomUserModelTests(TestCase):
     def test_creating_user_also_creates_profile(self):
         user = User.objects.create_user(
-            username="profile-user",
+            username="profile_user",
             email="profile@example.com",
             password="StrongTemporary!2026",
         )
 
         self.assertEqual(user.profile.user_id, user.id)
-        self.assertEqual(str(user), "profile-user")
+        self.assertEqual(str(user), "profile_user")
 
 
 class AuthenticationAPITests(APITestCase):

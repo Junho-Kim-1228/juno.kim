@@ -26,6 +26,20 @@ EMAIL_VERIFICATION_TOKEN_TTL_HOURS=24
 
 After changing those values, deploy normally or restart only `juno-kim.service`. Do not put SMTP credentials in GitHub, source files, or chat logs.
 
+## Identity and impersonation reports
+
+Public authors are displayed as `display name (@username)`. Only staff accounts receive the server-provided **사이트 운영자** badge. Usernames and display names that contain the operator's identity or authority terms (such as `admin`, `official`, `운영자`, or `juno kim`) are rejected.
+
+Verified members can report publicly visible comments and guestbook entries. A member can report each item only once; reports are rate-limited to 10 per hour per account and 20 per hour per IP. A report never automatically hides content or disables an account.
+
+Before deploying an identity-policy change, run this read-only check from the backend directory:
+
+```bash
+python manage.py check_identity_conflicts --strict
+```
+
+It reports only record IDs and public usernames/display names, changes no data, and exits non-zero if an existing account conflicts with the current policy. Resolve each result manually before tightening the policy further.
+
 ## Admin MFA
 
 Every staff account must register a TOTP authenticator before Admin pages become available. After the username/password step, Admin redirects to `/admin/mfa/setup/`. Scan the displayed QR code with an authenticator app, then enter the current six-digit code. The manual key is a collapsed fallback and is shown only once per enrollment session; it is never written to this repository or audit log. If a QR or key is exposed, use **새 QR 코드 만들기** before completing enrollment.
