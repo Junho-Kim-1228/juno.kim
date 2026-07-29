@@ -103,4 +103,9 @@ class SecurityAdminAndTokenTests(TestCase):
         self.assertIn("/admin/mfa/setup/", response["Location"])
         enrollment = client.get(response["Location"])
         self.assertEqual(enrollment.status_code, status.HTTP_200_OK)
-        self.assertContains(enrollment, "Manual key")
+        self.assertContains(enrollment, "관리자 MFA QR 코드")
+        self.assertContains(enrollment, "QR 코드를 스캔할 수 없나요?")
+        self.assertContains(enrollment, "새 QR 코드 만들기")
+
+        second_view = client.get(response["Location"])
+        self.assertNotContains(second_view, "수동 키는 이 화면에서 한 번만 표시됩니다")

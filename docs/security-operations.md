@@ -28,7 +28,7 @@ After changing those values, deploy normally or restart only `juno-kim.service`.
 
 ## Admin MFA
 
-Every staff account must register a TOTP authenticator before Admin pages become available. After the username/password step, Admin redirects to `/admin/mfa/setup/`. Add the displayed manual key or URI to an authenticator app, then enter the current six-digit code. The key is only shown during enrollment and is never written to this repository or audit log.
+Every staff account must register a TOTP authenticator before Admin pages become available. After the username/password step, Admin redirects to `/admin/mfa/setup/`. Scan the displayed QR code with an authenticator app, then enter the current six-digit code. The manual key is a collapsed fallback and is shown only once per enrollment session; it is never written to this repository or audit log. If a QR or key is exposed, use **새 QR 코드 만들기** before completing enrollment.
 
 For the first superuser, use a server console only after confirming the operator's identity:
 
