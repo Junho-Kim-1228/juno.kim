@@ -2,65 +2,43 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { postApi } from '../api/posts'
-import { projectApi } from '../api/projects'
 import { ErrorState, LoadingState } from '../components/AsyncState'
 import { GuestbookSection } from '../components/GuestbookSection'
 import { PostCard } from '../components/PostCard'
-import { ProjectCard } from '../components/ProjectCard'
+import { useAuth } from '../hooks/useAuth'
+
+const categories = ['일상', '취미', '사진', '개발']
 
 export function HomePage() {
-  const [data, setData] = useState({ projects: [], posts: [] })
+  const { user } = useAuth()
+  const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    Promise.all([projectApi.list(), postApi.list()])
-      .then(([projects, posts]) => setData({ projects: projects.slice(0, 3), posts: posts.slice(0, 3) }))
-      .catch(setError)
-      .finally(() => setLoading(false))
+    postApi.list().then((items) => setPosts(items.slice(0, 5))).catch(setError).finally(() => setLoading(false))
   }, [])
 
-  return (
-    <>
-      <section className="hero-section page-section">
-        <p className="eyebrow">JUNO KIM</p>
-        <h1>김준호</h1>
-        <div className="hero-actions">
-          <Link to="/projects">Projects</Link>
-          <Link to="/blog">Writing</Link>
-          <a href="#about">About</a>
-        </div>
-      </section>
+  return <>
+    <section className="home-intro page-section">
+      <p className="home-greeting">안녕하세요, 준호의 작은 홈페이지입니다.</p>
+      <h1>생각나는 것들을<br />가볍게 남겨 둡니다.</h1>
+      <p className="home-copy">일상에서 본 것, 좋아하는 것, 사진과 개발 기록을 천천히 모아 두는 공간입니다.</p>
+      <div className="home-actions">
+        {user?.is_staff ? <Link className="button-link" to="/board/new">게시판 글쓰기</Link> : <Link className="button-link" to="/board">게시판 둘러보기</Link>}
+        <a className="button-link secondary" href="#guestbook">방명록 남기기</a>
+      </div>
+      <div className="category-links" aria-label="글 분류">
+        {categories.map((category) => <Link key={category} to={`/board?category=${encodeURIComponent(category)}`}>{category}</Link>)}
+      </div>
+    </section>
+
+    <section className="page-section home-feed">
+      <div className="section-heading"><div><p className="eyebrow">최근 게시글</p><h2>새로 남긴 이야기</h2></div><Link to="/board">게시판 전체 보기</Link></div>
       {error && <ErrorState error={error} />}
-      {loading ? <LoadingState /> : (
-        <>
-          <section className="page-section">
-            <div className="section-heading"><div><p className="eyebrow">PROJECTS</p><h2>프로젝트</h2></div><Link to="/projects">모두 보기</Link></div>
-            {data.projects.length > 0 ? (
-              <div className="card-grid">{data.projects.map((project) => <ProjectCard key={project.id} project={project} />)}</div>
-            ) : <p className="empty-row">정리 중인 프로젝트가 곧 추가됩니다.</p>}
-          </section>
-          <section className="page-section">
-            <div className="section-heading"><div><p className="eyebrow">RECENT WRITING</p><h2>최근 기록</h2></div><Link to="/blog">모두 보기</Link></div>
-            {data.posts.length > 0 ? (
-              <div className="card-grid">{data.posts.map((post) => <PostCard key={post.id} post={post} />)}</div>
-            ) : <p className="empty-row">첫 번째 기록을 준비하고 있습니다.</p>}
-          </section>
-        </>
-      )}
-      <section className="about-section page-section" id="about">
-        <div>
-          <p className="eyebrow">ABOUT ME</p>
-          <h2>김준호입니다.</h2>
-        </div>
-        <div className="about-copy">
-          <p>프로젝트와 그 과정에서 배운 것들을 가볍게 기록하는 개인 공간입니다.</p>
-          <div className="about-links">
-            <a href="https://github.com/Junho-Kim-1228" target="_blank" rel="noreferrer">GitHub</a>
-          </div>
-        </div>
-      </section>
-      <GuestbookSection />
-    </>
-  )
+      {loading ? <LoadingState /> : posts.length > 0 ? <div className="card-grid">{posts.map((post) => <PostCard key={post.id} post={post} />)}</div> : <p className="empty-row">아직 게시글이 없습니다. 첫 글을 남겨 보세요.</p>}
+    </section>
+
+    <GuestbookSection compact />
+  </>
 }

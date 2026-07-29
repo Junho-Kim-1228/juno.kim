@@ -34,6 +34,9 @@ class PostViewSet(viewsets.ModelViewSet):
             .order_by("-is_featured", "-published_at", "-created_at")
         )
         user = self.request.user
+        category = self.request.query_params.get("category")
+        if category:
+            queryset = queryset.filter(category__slug=category)
         if user.is_authenticated and user.is_staff:
             return queryset
         return queryset.filter(status=Post.Status.PUBLISHED)

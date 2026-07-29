@@ -29,7 +29,7 @@ export function PostEditorPage() {
     if (cover) payload.append('cover_image', cover)
     try {
       const post = isEditing ? await postApi.update(slug, payload) : await postApi.create(payload)
-      history.push(`/blog/${post.slug}`)
+      history.push(`/board/${post.slug}`)
     } catch (requestError) { setError(requestError) }
   }
 

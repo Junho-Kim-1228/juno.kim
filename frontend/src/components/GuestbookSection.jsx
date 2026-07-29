@@ -8,7 +8,7 @@ import { ErrorState } from './AsyncState'
 
 const initialForm = { message: '' }
 
-export function GuestbookSection() {
+export function GuestbookSection({ compact = false, standalone = false }) {
   const { user, loading: authLoading, reloadUser } = useAuth()
   const [entries, setEntries] = useState([])
   const [form, setForm] = useState(initialForm)
@@ -36,10 +36,11 @@ export function GuestbookSection() {
     try { setNotice((await authApi.resendVerification()).detail); await reloadUser() } catch (requestError) { setError(requestError) }
   }
 
-  return <section className="guestbook-section page-section" id="guestbook">
-    <div className="section-heading"><div><p className="eyebrow">GUESTBOOK</p><h2>방문록</h2></div><p className="section-note">인증된 로그인 사용자만 작성할 수 있습니다.</p></div>
+  const shownEntries = compact ? entries.slice(0, 5) : entries
+  return <section className={`guestbook-section page-section${standalone ? ' standalone-page' : ''}`} id="guestbook">
+    <div className="section-heading"><div><p className="eyebrow">방명록</p><h2>{compact ? '잠시 들렀다 간 이야기' : '방명록'}</h2></div><p className="section-note">인증된 로그인 사용자만 작성할 수 있습니다.</p></div>
     {authLoading ? <p className="guestbook-auth-note">로그인 상태를 확인하고 있습니다.</p> : !user ? <p className="guestbook-auth-note">방문록을 작성하려면 로그인해 주세요. <Link to="/login">로그인</Link></p> : !user.email_verified ? <p className="guestbook-auth-note">이메일 인증이 필요합니다. 받은편지함을 확인하거나 <button className="text-button" type="button" onClick={resend}>인증 메일 재발송</button></p> : <form className="guestbook-form" onSubmit={submit}><label className="guestbook-message"><span>{user.profile?.display_name || user.username} 님으로 남기기</span><textarea name="message" value={form.message} onChange={(event) => setForm({ message: event.target.value })} maxLength="500" rows="3" placeholder="가볍게 인사를 남겨 주세요." required /></label><button type="submit" disabled={submitting}>{submitting ? '등록 중' : '남기기'}</button></form>}
     {notice && <p className="success-message">{notice}</p>}{error && <ErrorState error={error} />}
-    {loading ? <p className="guestbook-state">방문록을 불러오는 중입니다.</p> : entries.length > 0 ? <ul className="guestbook-list">{entries.map((entry) => <li key={entry.id}><div className="guestbook-head"><strong>{entry.name}</strong><time dateTime={entry.created_at}>{new Date(entry.created_at).toLocaleDateString('ko-KR')}</time></div><p>{entry.message}</p></li>)}</ul> : <p className="empty-row">아직 남겨진 글이 없습니다.</p>}
+    {loading ? <p className="guestbook-state">방명록을 불러오는 중입니다.</p> : shownEntries.length > 0 ? <ul className="guestbook-list">{shownEntries.map((entry) => <li key={entry.id}><div className="guestbook-head"><strong>{entry.name}</strong><time dateTime={entry.created_at}>{new Date(entry.created_at).toLocaleDateString('ko-KR')}</time></div><p>{entry.message}</p></li>)}</ul> : <p className="empty-row">아직 남겨진 글이 없습니다.</p>}
   </section>
 }

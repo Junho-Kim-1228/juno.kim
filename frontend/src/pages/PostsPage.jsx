@@ -1,16 +1,23 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 
 import { postApi } from '../api/posts'
 import { ErrorState, LoadingState } from '../components/AsyncState'
 import { PostCard } from '../components/PostCard'
 import { useAuth } from '../hooks/useAuth'
 
-export function PostsPage() {
+export function PostsPage({ title = '게시판', eyebrow = '게시판', description = '일상과 생각을 편하게 남기는 공간입니다.', writePath = '/board/new' }) {
   const { user } = useAuth()
+  const location = useLocation()
+  const category = new URLSearchParams(location.search).get('category')
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  useEffect(() => { postApi.list().then(setPosts).catch(setError).finally(() => setLoading(false)) }, [])
-  return <section className="page-section"><div className="section-heading"><div><p className="eyebrow">TECH BLOG</p><h1>기술 기록</h1></div>{user?.is_staff && <Link className="button-link small" to="/blog/new">글쓰기</Link>}</div>{error && <ErrorState error={error} />}{loading ? <LoadingState /> : <div className="card-grid">{posts.map((post) => <PostCard key={post.id} post={post} />)}</div>}</section>
+
+  useEffect(() => {
+    setLoading(true)
+    postApi.list(category ? { category } : {}).then(setPosts).catch(setError).finally(() => setLoading(false))
+  }, [category])
+
+  return <section className="page-section board-page"><div className="section-heading"><div><p className="eyebrow">{eyebrow}</p><h1>{category ? `${category} 이야기` : title}</h1><p className="page-description">{description}</p></div>{user?.is_staff && <Link className="button-link small" to={writePath}>글쓰기</Link>}</div>{error && <ErrorState error={error} />}{loading ? <LoadingState /> : posts.length ? <div className="card-grid">{posts.map((post) => <PostCard key={post.id} post={post} />)}</div> : <p className="empty-row">아직 이 분류의 글이 없습니다.</p>}</section>
 }

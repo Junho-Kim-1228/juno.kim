@@ -3,8 +3,8 @@ import { apiClient } from './client'
 const unwrap = (data) => data.results || data
 
 export const postApi = {
-  async list() {
-    const { data } = await apiClient.get('/posts/')
+  async list(params = {}) {
+    const { data } = await apiClient.get('/posts/', { params })
     return unwrap(data)
   },
   async detail(slug) {
