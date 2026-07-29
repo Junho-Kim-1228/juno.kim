@@ -42,6 +42,10 @@ class Tag(models.Model):
 
 
 class Post(models.Model):
+    class Kind(models.TextChoices):
+        BOARD = "board", "게시판 글"
+        TECHNICAL = "technical", "기술 기록"
+
     class Status(models.TextChoices):
         DRAFT = "draft", "초안"
         PUBLISHED = "published", "공개"
@@ -60,6 +64,12 @@ class Post(models.Model):
         related_name="posts",
     )
     tags = models.ManyToManyField(Tag, blank=True, related_name="posts")
+    kind = models.CharField(
+        "게시 위치",
+        max_length=16,
+        choices=Kind.choices,
+        default=Kind.BOARD,
+    )
     title = models.CharField("제목", max_length=220)
     slug = models.SlugField("슬러그", max_length=240, unique=True, allow_unicode=True)
     excerpt = models.CharField("요약", max_length=320)

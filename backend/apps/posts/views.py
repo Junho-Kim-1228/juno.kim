@@ -35,8 +35,13 @@ class PostViewSet(viewsets.ModelViewSet):
         )
         user = self.request.user
         category = self.request.query_params.get("category")
+        kind = self.request.query_params.get("kind")
         if category:
             queryset = queryset.filter(category__slug=category)
+        if kind in Post.Kind.values:
+            queryset = queryset.filter(kind=kind)
+        elif self.action == "list":
+            queryset = queryset.filter(kind=Post.Kind.BOARD)
         if user.is_authenticated and user.is_staff:
             return queryset
         return queryset.filter(status=Post.Status.PUBLISHED)

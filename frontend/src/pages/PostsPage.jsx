@@ -6,7 +6,7 @@ import { ErrorState, LoadingState } from '../components/AsyncState'
 import { PostCard } from '../components/PostCard'
 import { useAuth } from '../hooks/useAuth'
 
-export function PostsPage({ title = '게시판', eyebrow = '게시판', description = '일상과 생각을 편하게 남기는 공간입니다.', writePath = '/board/new', allowMemberWriting = false }) {
+export function PostsPage({ title = '게시판', eyebrow = '게시판', description = '일상과 생각을 편하게 남기는 공간입니다.', writePath = '/board/new', allowMemberWriting = false, kind = 'board' }) {
   const { user } = useAuth()
   const location = useLocation()
   const category = new URLSearchParams(location.search).get('category')
@@ -22,8 +22,8 @@ export function PostsPage({ title = '게시판', eyebrow = '게시판', descript
   useEffect(() => {
     setLoading(true)
     setError(null)
-    postApi.list(category ? { category } : {}).then(setPosts).catch(setError).finally(() => setLoading(false))
-  }, [category])
+    postApi.list({ kind, ...(category ? { category } : {}) }).then(setPosts).catch(setError).finally(() => setLoading(false))
+  }, [category, kind])
 
   const selectedCategory = categories.find((item) => item.slug === category)
   const canWrite = user?.is_staff || (allowMemberWriting && user?.email_verified)
@@ -33,5 +33,5 @@ export function PostsPage({ title = '게시판', eyebrow = '게시판', descript
       <Link className={!category ? 'active' : ''} to={location.pathname}>전체</Link>
       {categories.map((item) => <Link className={category === item.slug ? 'active' : ''} key={item.id} to={`${location.pathname}?category=${encodeURIComponent(item.slug)}`}>{item.name}</Link>)}
     </nav>
-    {error && <ErrorState error={error} />}{loading ? <LoadingState /> : posts.length ? <div className="card-grid">{posts.map((post) => <PostCard key={post.id} post={post} />)}</div> : <p className="empty-row">아직 이 분류의 글이 없습니다.</p>}</section>
+    {error && <ErrorState error={error} />}{loading ? <LoadingState /> : posts.length ? <div className="card-grid">{posts.map((post) => <PostCard basePath={kind === 'technical' ? '/blog' : '/board'} key={post.id} post={post} />)}</div> : <p className="empty-row">아직 이 분류의 글이 없습니다.</p>}</section>
 }

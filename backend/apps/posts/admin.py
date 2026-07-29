@@ -24,6 +24,7 @@ class TagAdmin(StaffContentAdminMixin, admin.ModelAdmin):
 class PostAdmin(StaffContentAdminMixin, admin.ModelAdmin):
     list_display = (
         "title",
+        "kind",
         "author",
         "category",
         "status",
@@ -31,7 +32,7 @@ class PostAdmin(StaffContentAdminMixin, admin.ModelAdmin):
         "published_at",
         "updated_at",
     )
-    list_filter = ("status", "is_featured", "category", "tags", "created_at")
+    list_filter = ("kind", "status", "is_featured", "category", "tags", "created_at")
     search_fields = ("title", "excerpt", "content", "author__username", "author__email")
     readonly_fields = ("slug", "published_at", "created_at", "updated_at")
     filter_horizontal = ("tags",)

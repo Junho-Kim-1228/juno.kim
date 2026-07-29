@@ -41,6 +41,7 @@ class VerifiedMemberPostWriteTests(APITestCase):
                 "content": "content",
                 "category_id": self.category.id,
                 "tag_ids": [self.tag.id],
+                "kind": Post.Kind.TECHNICAL,
                 "status": Post.Status.ARCHIVED,
                 "is_featured": True,
             },
@@ -50,6 +51,7 @@ class VerifiedMemberPostWriteTests(APITestCase):
         self.assertEqual(created.status_code, status.HTTP_201_CREATED)
         post = Post.objects.get(slug=created.data["slug"])
         self.assertEqual(post.author, self.member)
+        self.assertEqual(post.kind, Post.Kind.BOARD)
         self.assertEqual(post.status, Post.Status.PUBLISHED)
         self.assertFalse(post.is_featured)
 

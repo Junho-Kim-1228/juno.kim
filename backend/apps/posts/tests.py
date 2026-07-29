@@ -72,6 +72,26 @@ class PostAPITests(APITestCase):
             {self.published.slug},
         )
 
+    def test_anonymous_user_can_filter_board_and_technical_posts(self):
+        technical = Post.objects.create(
+            author=self.staff,
+            kind=Post.Kind.TECHNICAL,
+            title="Technical Post",
+            excerpt="excerpt",
+            content="content",
+            status=Post.Status.PUBLISHED,
+        )
+
+        board_response = self.client.get("/api/v1/posts/", {"kind": Post.Kind.BOARD})
+        technical_response = self.client.get("/api/v1/posts/", {"kind": Post.Kind.TECHNICAL})
+
+        self.assertIn(self.published.slug, {item["slug"] for item in board_response.data["results"]})
+        self.assertNotIn(technical.slug, {item["slug"] for item in board_response.data["results"]})
+        self.assertEqual(
+            {item["slug"] for item in technical_response.data["results"]},
+            {technical.slug},
+        )
+
     def test_member_cannot_create_or_modify_post(self):
         self.client.force_authenticate(self.member)
         created = self.client.post(
@@ -120,6 +140,7 @@ class PostAPITests(APITestCase):
                 "content": "content",
                 "category_id": self.category.id,
                 "tag_ids": [self.tag.id],
+                "kind": Post.Kind.TECHNICAL,
                 "status": Post.Status.PUBLISHED,
                 "is_featured": True,
             },
@@ -137,6 +158,7 @@ class PostAPITests(APITestCase):
         self.assertEqual(updated.status_code, status.HTTP_200_OK)
         post = Post.objects.get(slug=created.data["slug"])
         self.assertEqual(post.author, self.staff)
+        self.assertEqual(post.kind, Post.Kind.TECHNICAL)
         self.assertTrue(post.is_featured)
 
     def test_staff_can_remove_existing_cover_image(self):

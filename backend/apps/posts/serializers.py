@@ -50,6 +50,7 @@ class PostSerializer(serializers.ModelSerializer):
             "category_id",
             "tags",
             "tag_ids",
+            "kind",
             "title",
             "slug",
             "excerpt",
@@ -81,6 +82,7 @@ class PostSerializer(serializers.ModelSerializer):
 
         request = self.context.get("request")
         if request and request.user.is_authenticated and not request.user.is_staff:
+            attrs["kind"] = Post.Kind.BOARD
             attrs.pop("status", None)
             attrs.pop("is_featured", None)
             if self.instance is None:

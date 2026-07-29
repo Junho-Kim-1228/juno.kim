@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useHistory, useParams } from 'react-router-dom'
+import { useHistory, useLocation, useParams } from 'react-router-dom'
 
 import { postApi } from '../api/posts'
 import { ErrorState } from '../components/AsyncState'
@@ -10,7 +10,9 @@ const initialForm = { title: '', excerpt: '', content: '', category_id: '', tag_
 export function PostEditorPage() {
   const { slug } = useParams()
   const history = useHistory()
+  const location = useLocation()
   const { user } = useAuth()
+  const editorKind = location.pathname.startsWith('/blog') ? 'technical' : 'board'
   const [form, setForm] = useState(initialForm)
   const [cover, setCover] = useState(null)
   const [removeCover, setRemoveCover] = useState(false)
@@ -30,13 +32,15 @@ export function PostEditorPage() {
       setCover(null)
       setRemoveCover(false)
     }).catch(setError)
-  }, [history, isEditing, slug, user])
+    else setForm({ ...initialForm, kind: editorKind })
+  }, [editorKind, history, isEditing, slug, user])
 
   const submit = async (event) => {
     event.preventDefault()
     const payload = new FormData()
     ;['title', 'excerpt', 'content'].forEach((key) => payload.append(key, form[key]))
     if (user.is_staff) {
+      payload.append('kind', form.kind || editorKind)
       payload.append('status', form.status)
       payload.append('is_featured', form.is_featured)
     }
@@ -46,7 +50,7 @@ export function PostEditorPage() {
     if (removeCover) payload.append('remove_cover_image', 'true')
     try {
       const post = isEditing ? await postApi.update(slug, payload) : await postApi.create(payload)
-      history.push(`/board/${post.slug}`)
+      history.push(`${post.kind === 'technical' ? '/blog' : '/board'}/${post.slug}`)
     } catch (requestError) { setError(requestError) }
   }
 
@@ -63,6 +67,7 @@ export function PostEditorPage() {
     <fieldset><legend>태그</legend><div className="chip-row">{options.tags.map((tag) => <label className="check-label" key={tag.id}><input type="checkbox" checked={form.tag_ids.includes(tag.id)} onChange={() => toggleTag(tag.id)} /> {tag.name}</label>)}</div></fieldset>
     <label>대표 이미지<input ref={coverInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => { setCover(event.target.files[0] || null); setRemoveCover(false) }} /></label>
     {isEditing && form.cover_image && <div className="editor-cover"><img src={form.cover_image} alt="현재 대표 이미지" />{removeCover ? <><p>저장하면 대표 이미지가 제거됩니다.</p><button type="button" className="text-button" onClick={() => setRemoveCover(false)}>제거 취소</button></> : <button type="button" className="text-button danger" onClick={removeCurrentCover}>대표 이미지 제거</button>}</div>}
+    {user.is_staff && <label>게시 위치<select value={form.kind || editorKind} onChange={(event) => setForm({ ...form, kind: event.target.value })}><option value="board">게시판 글</option><option value="technical">기술 기록</option></select></label>}
     {user.is_staff && <div className="form-row"><label>상태<select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value })}><option value="draft">초안</option><option value="published">공개</option><option value="archived">보관</option></select></label><label className="check-label"><input type="checkbox" checked={form.is_featured} onChange={(event) => setForm({ ...form, is_featured: event.target.checked })} /> 공지 게시글</label></div>}{error && <ErrorState error={error} />}<button type="submit">저장</button>
   </form></section>
 }
