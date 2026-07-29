@@ -13,4 +13,9 @@ export const guestbookApi = {
     const { data } = await apiClient.post('/guestbook/', payload)
     return data
   },
+  async reply(id, message) {
+    await authApi.csrf()
+    const { data } = await apiClient.patch(`/guestbook/${id}/reply/`, { staff_reply: message })
+    return data
+  },
 }

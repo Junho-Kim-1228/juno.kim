@@ -7,7 +7,7 @@ from rest_framework.test import APIClient, APITestCase
 from apps.users.models import User
 
 from .admin import GuestbookEntryAdmin
-from .models import GuestbookEntry
+from .models import GuestbookEntry, TodayStatus
 
 
 class GuestbookAPITests(APITestCase):
@@ -100,6 +100,85 @@ class GuestbookAPITests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_only_staff_can_reply_to_guestbook_entries(self):
+        entry = GuestbookEntry.objects.create(author=self.user, name="방문자", message="안녕하세요")
+        staff = User.objects.create_user(
+            username="reply_helper",
+            email="guestbook-staff-api@example.com",
+            password="StrongTemporary!2026",
+            is_staff=True,
+        )
+
+        self.client.force_authenticate(self.user)
+        denied = self.client.patch(
+            f"/api/v1/guestbook/{entry.id}/reply/",
+            {"staff_reply": "일반 회원의 답장"},
+            format="json",
+            **self.csrf_headers,
+        )
+
+        self.client.force_authenticate(staff)
+        allowed = self.client.patch(
+            f"/api/v1/guestbook/{entry.id}/reply/",
+            {"staff_reply": "반갑습니다!"},
+            format="json",
+            **self.csrf_headers,
+        )
+
+        self.assertEqual(denied.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(allowed.status_code, status.HTTP_200_OK)
+        entry.refresh_from_db()
+        self.assertEqual(entry.staff_reply, "반갑습니다!")
+        self.assertEqual(entry.staff_replied_by, staff)
+        self.assertIsNotNone(entry.staff_replied_at)
+        self.assertEqual(allowed.data["reply"]["author"]["username"], staff.username)
+
+    def test_staff_can_remove_reply(self):
+        staff = User.objects.create_user(
+            username="reply_remover",
+            email="reply-remover@example.com",
+            password="StrongTemporary!2026",
+            is_staff=True,
+        )
+        entry = GuestbookEntry.objects.create(
+            author=self.user,
+            name="방문자",
+            message="안녕하세요",
+            staff_reply="기존 답장",
+            staff_replied_by=staff,
+        )
+        self.client.force_authenticate(staff)
+
+        response = self.client.patch(
+            f"/api/v1/guestbook/{entry.id}/reply/",
+            {"staff_reply": "   "},
+            format="json",
+            **self.csrf_headers,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsNone(response.data["reply"])
+        entry.refresh_from_db()
+        self.assertEqual(entry.staff_reply, "")
+        self.assertIsNone(entry.staff_replied_by)
+        self.assertIsNone(entry.staff_replied_at)
+
+    def test_public_today_status_returns_latest_entry(self):
+        TodayStatus.objects.create(mood="신남", doing="첫 번째 작업")
+        latest = TodayStatus.objects.create(doing="사이트 꾸미는 중", listening="좋아하는 노래")
+
+        response = self.client.get("/api/v1/today-status/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["id"], latest.id)
+        self.assertEqual(response.data["doing"], "사이트 꾸미는 중")
+
+    def test_public_today_status_returns_null_when_empty(self):
+        response = self.client.get("/api/v1/today-status/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsNone(response.data)
 
 
 class GuestbookAdminPermissionTests(TestCase):
