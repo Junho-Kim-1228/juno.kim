@@ -31,10 +31,10 @@ export function AppRoutes() {
     <ProtectedRoute exact path="/projects/:slug/edit" component={ProjectEditorPage} staffOnly fallbackPath="/projects" />
     <Route exact path="/projects/:slug" component={ProjectDetailPage} />
     <Route exact path="/projects" component={ProjectsPage} />
-    <ProtectedRoute exact path="/board/new" component={PostEditorPage} staffOnly fallbackPath="/board" />
-    <ProtectedRoute exact path="/board/:slug/edit" component={PostEditorPage} staffOnly fallbackPath="/board" />
+    <ProtectedRoute exact path="/board/new" component={PostEditorPage} verifiedOnly fallbackPath="/profile" />
+    <ProtectedRoute exact path="/board/:slug/edit" component={PostEditorPage} verifiedOnly fallbackPath="/profile" />
     <Route exact path="/board/:slug" component={PostDetailPage} />
-    <Route exact path="/board" component={PostsPage} />
+    <Route exact path="/board" render={() => <PostsPage allowMemberWriting />} />
     <ProtectedRoute exact path="/blog/new" component={PostEditorPage} staffOnly fallbackPath="/blog" />
     <ProtectedRoute exact path="/blog/:slug/edit" component={PostEditorPage} staffOnly fallbackPath="/blog" />
     <Route exact path="/blog/:slug" component={PostDetailPage} />

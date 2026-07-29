@@ -6,7 +6,7 @@ import { ErrorState, LoadingState } from '../components/AsyncState'
 import { PostCard } from '../components/PostCard'
 import { useAuth } from '../hooks/useAuth'
 
-export function PostsPage({ title = '게시판', eyebrow = '게시판', description = '일상과 생각을 편하게 남기는 공간입니다.', writePath = '/board/new' }) {
+export function PostsPage({ title = '게시판', eyebrow = '게시판', description = '일상과 생각을 편하게 남기는 공간입니다.', writePath = '/board/new', allowMemberWriting = false }) {
   const { user } = useAuth()
   const location = useLocation()
   const category = new URLSearchParams(location.search).get('category')
@@ -26,8 +26,9 @@ export function PostsPage({ title = '게시판', eyebrow = '게시판', descript
   }, [category])
 
   const selectedCategory = categories.find((item) => item.slug === category)
+  const canWrite = user?.is_staff || (allowMemberWriting && user?.email_verified)
 
-  return <section className="page-section board-page"><div className="section-heading"><div><p className="eyebrow">{eyebrow}</p><h1>{selectedCategory ? `${selectedCategory.name} 이야기` : title}</h1><p className="page-description">{description}</p></div>{user?.is_staff && <Link className="button-link small" to={writePath}>글쓰기</Link>}</div>
+  return <section className="page-section board-page"><div className="section-heading"><div><p className="eyebrow">{eyebrow}</p><h1>{selectedCategory ? `${selectedCategory.name} 이야기` : title}</h1><p className="page-description">{description}</p></div>{canWrite && <Link className="button-link small" to={writePath}>글쓰기</Link>}</div>
     <nav className="board-filters" aria-label="게시글 카테고리">
       <Link className={!category ? 'active' : ''} to={location.pathname}>전체</Link>
       {categories.map((item) => <Link className={category === item.slug ? 'active' : ''} key={item.id} to={`${location.pathname}?category=${encodeURIComponent(item.slug)}`}>{item.name}</Link>)}

@@ -10,6 +10,19 @@ class IsVerifiedUserOrReadOnly(BasePermission):
         return bool(request.user and request.user.is_authenticated and request.user.email_verified)
 
 
+class IsVerifiedUserOrStaffOrReadOnly(BasePermission):
+    """Public reads are allowed; writes require staff or a verified email account."""
+
+    def has_permission(self, request, view):
+        if request.method in SAFE_METHODS:
+            return True
+        return bool(
+            request.user
+            and request.user.is_authenticated
+            and (request.user.is_staff or request.user.email_verified)
+        )
+
+
 class IsOwnerOrStaffOrReadOnly(BasePermission):
     def has_object_permission(self, request, view, obj):
         if request.method in SAFE_METHODS:

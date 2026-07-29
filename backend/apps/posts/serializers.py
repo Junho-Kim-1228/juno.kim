@@ -78,6 +78,14 @@ class PostSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {"cover_image": "새 이미지를 올리면서 기존 이미지를 제거할 수 없습니다."}
             )
+
+        request = self.context.get("request")
+        if request and request.user.is_authenticated and not request.user.is_staff:
+            attrs.pop("status", None)
+            attrs.pop("is_featured", None)
+            if self.instance is None:
+                attrs["status"] = Post.Status.PUBLISHED
+                attrs["is_featured"] = False
         return attrs
 
     def create(self, validated_data):
