@@ -116,6 +116,7 @@ main { flex: 1; }
 .card:hover { background: #f6f3ec; }
 .card h3 { margin: 0; font-size: 1.2rem; font-weight: 590; line-height: 1.45; }
 .card h3 a:hover { color: var(--accent); }
+.notice-prefix { margin-right: .45em; color: var(--accent); font-weight: 650; }
 .card p { margin: 6px 0 0; color: var(--muted); line-height: 1.7; }
 .project-card { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(300px, .85fr); gap: 38px; align-items: center; }
 .project-details { display: grid; gap: 13px; }

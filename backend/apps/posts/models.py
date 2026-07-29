@@ -79,7 +79,7 @@ class Post(models.Model):
         choices=Status.choices,
         default=Status.DRAFT,
     )
-    is_featured = models.BooleanField("대표 게시글", default=False)
+    is_featured = models.BooleanField("공지 게시글", default=False)
     published_at = models.DateTimeField("공개일", null=True, blank=True)
     created_at = models.DateTimeField("생성일", auto_now_add=True)
     updated_at = models.DateTimeField("수정일", auto_now=True)

@@ -16,7 +16,7 @@ export function PostCard({ post }) {
         <span>{formatDate(post.published_at || post.created_at)}</span>
         <span>{post.category?.name || '기록'}</span>
       </div>
-      <h3><Link to={`/board/${post.slug}`}>{post.title}</Link></h3>
+      <h3><Link to={`/board/${post.slug}`}>{post.is_featured && <span className="notice-prefix">[공지]</span>}{post.title}</Link></h3>
       <p>{post.excerpt}</p>
     </article>
   )
