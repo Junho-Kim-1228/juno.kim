@@ -92,7 +92,6 @@ class OperationalEventAdmin(admin.ModelAdmin):
     list_display = ("created_at", "event_name", "account", "result", "error_type")
     list_filter = ("action", "created_at")
     search_fields = ("target_user__username",)
-    date_hierarchy = "created_at"
     fields = ("created_at", "event_name", "account", "result", "error_type", "safe_details")
     readonly_fields = fields
 

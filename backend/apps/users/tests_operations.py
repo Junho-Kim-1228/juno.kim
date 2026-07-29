@@ -3,6 +3,9 @@ from unittest.mock import patch
 from django.contrib import admin
 from django.core import mail
 from django.test import RequestFactory, TestCase, override_settings
+from django.urls import reverse
+from django_otp import DEVICE_ID_SESSION_KEY
+from django_otp.plugins.otp_totp.models import TOTPDevice
 
 from .email import send_verification_email
 from .models import AuditLog, OperationalEvent, User
@@ -66,6 +69,7 @@ class OperationalEventTests(TestCase):
 
         self.assertTrue(model_admin.has_module_permission(request))
         self.assertTrue(model_admin.has_view_permission(request))
+        self.assertIsNone(model_admin.date_hierarchy)
         self.assertFalse(model_admin.has_add_permission(request))
         self.assertFalse(model_admin.has_change_permission(request, operation))
         self.assertFalse(model_admin.has_delete_permission(request, operation))
@@ -79,3 +83,26 @@ class OperationalEventTests(TestCase):
 
         self.assertFalse(model_admin.has_module_permission(request))
         self.assertFalse(model_admin.has_view_permission(request))
+
+    def test_verified_staff_can_render_operational_event_changelist(self):
+        AuditLog.objects.create(
+            action=AuditLog.Action.VERIFICATION_EMAIL_FAILED,
+            target_user=self.member,
+            details={"result": "failed", "error_type": "TimeoutError"},
+        )
+        device = TOTPDevice.objects.create(
+            user=self.staff,
+            name="Admin test device",
+            confirmed=True,
+        )
+        self.client.force_login(self.staff)
+        session = self.client.session
+        session[DEVICE_ID_SESSION_KEY] = device.persistent_id
+        session.save()
+
+        response = self.client.get(
+            reverse("admin:users_operationalevent_changelist")
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "TimeoutError")
