@@ -22,6 +22,6 @@ export function MainLayout({ children }) {
       </div>
     </header>
     <main>{children}</main>
-    <footer className="site-footer"><span>© {new Date().getFullYear()} juno.kim</span><span>가볍게 쓰고, 오래 남깁니다.</span></footer>
+    <footer className="site-footer"><span>© {new Date().getFullYear()} juno.kim</span></footer>
   </div>
 }
