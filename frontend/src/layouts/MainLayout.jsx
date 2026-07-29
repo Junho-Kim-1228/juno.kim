@@ -1,13 +1,15 @@
-import { Link, NavLink, useHistory } from 'react-router-dom'
+import { Link, NavLink, useHistory, useLocation } from 'react-router-dom'
 
 import { useAuth } from '../hooks/useAuth'
 
 export function MainLayout({ children }) {
   const { user, logout } = useAuth()
   const history = useHistory()
+  const location = useLocation()
+  const isDeveloperPage = location.pathname === '/developer'
   const handleLogout = async () => { await logout(); history.push('/') }
 
-  return <div className="site-shell">
+  return <div className={`site-shell${isDeveloperPage ? ' developer-shell' : ''}`}>
     <header className="site-header">
       <Link className="brand" to="/">juno.kim</Link>
       <nav aria-label="주요 메뉴">
