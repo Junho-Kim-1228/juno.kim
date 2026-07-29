@@ -6,10 +6,10 @@ export function MainLayout({ children }) {
   const { user, logout } = useAuth()
   const history = useHistory()
   const location = useLocation()
-  const isDeveloperPage = location.pathname === '/developer'
+  const isDeveloperArea = location.pathname === '/developer' || location.pathname.startsWith('/projects') || location.pathname.startsWith('/blog')
   const handleLogout = async () => { await logout(); history.push('/') }
 
-  return <div className={`site-shell${isDeveloperPage ? ' developer-shell' : ''}`}>
+  return <div className={`site-shell${isDeveloperArea ? ' developer-shell' : ''}`}>
     <header className="site-header">
       <Link className="brand" to="/">juno.kim</Link>
       <nav aria-label="주요 메뉴">

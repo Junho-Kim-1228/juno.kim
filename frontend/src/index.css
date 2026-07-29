@@ -158,12 +158,19 @@ main { flex: 1; }
 .developer-shell { background: #292d2a; }
 .developer-shell .brand { color: #eeeae2; }
 .developer-shell .site-header, .developer-shell .site-footer { border-color: var(--line); }
+.developer-shell .button-link.secondary { color: #eeeae2; }
+.developer-shell .stack-form input, .developer-shell .stack-form textarea, .developer-shell .stack-form select {
+  color: #eeeae2;
+  background: #252a27;
+  color-scheme: dark;
+}
+.developer-shell .comment-head strong { color: #eeeae2; }
 .developer-theme {
   min-height: 70vh;
   padding-bottom: 46px;
   background: #292d2a;
 }
-.developer-theme .card:hover { background: #343b37; }
+.developer-shell .card:hover, .developer-theme .card:hover { background: #343b37; }
 .developer-theme .state-message { margin-top: 0; padding-top: 54px; }
 .standalone-page { min-height: 64vh; padding-top: 66px; }
 
