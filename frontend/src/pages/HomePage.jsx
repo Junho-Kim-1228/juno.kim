@@ -21,9 +21,7 @@ export function HomePage() {
 
   return <>
     <section className="home-intro page-section">
-      <p className="home-greeting">안녕하세요, 준호의 작은 홈페이지입니다.</p>
-      <h1>생각나는 것들을<br />가볍게 남겨 둡니다.</h1>
-      <p className="home-copy">일상에서 본 것, 좋아하는 것, 사진과 개발 기록을 천천히 모아 두는 공간입니다.</p>
+      <h1>김준호 개인 페이지</h1>
       <div className="home-actions">
         {user?.is_staff ? <Link className="button-link" to="/board/new">게시판 글쓰기</Link> : <Link className="button-link" to="/board">게시판 둘러보기</Link>}
         <a className="button-link secondary" href="#guestbook">방명록 남기기</a>
