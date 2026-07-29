@@ -218,6 +218,7 @@ main { flex: 1; }
 .stack-form { display: grid; gap: 17px; }
 .stack-form label { display: grid; gap: 7px; color: var(--muted); }
 .stack-form input, .stack-form textarea, .stack-form select { width: 100%; color: #111827; background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 11px 13px; outline: none; }
+.stack-form textarea { resize: vertical; }
 .stack-form input:focus, .stack-form textarea:focus, .stack-form select:focus { border-color: var(--accent); }
 .stack-form fieldset { border: 1px solid var(--line); border-radius: 4px; padding: 14px; }
 .form-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
