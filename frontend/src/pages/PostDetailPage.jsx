@@ -23,7 +23,7 @@ export function PostDetailPage() {
     setDeleting(true)
     try {
       await postApi.remove(post.slug)
-      history.replace(post.kind === 'technical' ? '/records' : '/board')
+      history.replace(post.kind === 'technical' ? '/developer' : '/board')
     } catch (requestError) {
       setError(requestError)
       setDeleting(false)

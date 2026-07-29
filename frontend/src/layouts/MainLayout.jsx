@@ -14,7 +14,6 @@ export function MainLayout({ children }) {
         <NavLink exact to="/" activeClassName="active">홈</NavLink>
         <NavLink to="/board" activeClassName="active">게시판</NavLink>
         <NavLink to="/guestbook" activeClassName="active">방명록</NavLink>
-        <NavLink to="/records" activeClassName="active">기록</NavLink>
         <NavLink to="/developer" activeClassName="active">개발자</NavLink>
       </nav>
       <div className="account-nav">

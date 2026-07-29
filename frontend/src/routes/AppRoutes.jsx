@@ -1,4 +1,4 @@
-import { Route, Switch } from 'react-router-dom'
+import { Redirect, Route, Switch } from 'react-router-dom'
 
 import { MainLayout } from '../layouts/MainLayout'
 import { HomePage } from '../pages/HomePage'
@@ -22,7 +22,7 @@ export function AppRoutes() {
     <Route exact path="/" component={HomePage} />
     <Route exact path="/guestbook" component={GuestbookPage} />
     <Route exact path="/developer" component={DeveloperPage} />
-    <Route exact path="/records" render={() => <PostsPage title="기록" eyebrow="기록" description="개발하며 정리한 것들과 오래 남기고 싶은 메모입니다." kind="technical" writePath="/blog/new" />} />
+    <Redirect exact from="/records" to="/developer" />
     <Route exact path="/login" component={LoginPage} />
     <Route exact path="/register" component={RegisterPage} />
     <Route exact path="/verify-email" component={VerifyEmailPage} />
@@ -35,10 +35,10 @@ export function AppRoutes() {
     <ProtectedRoute exact path="/board/:slug/edit" component={PostEditorPage} verifiedOnly fallbackPath="/profile" />
     <Route exact path="/board/:slug" component={PostDetailPage} />
     <Route exact path="/board" render={() => <PostsPage allowMemberWriting />} />
-    <ProtectedRoute exact path="/blog/new" component={PostEditorPage} staffOnly fallbackPath="/blog" />
-    <ProtectedRoute exact path="/blog/:slug/edit" component={PostEditorPage} staffOnly fallbackPath="/blog" />
+    <ProtectedRoute exact path="/blog/new" component={PostEditorPage} staffOnly fallbackPath="/developer" />
+    <ProtectedRoute exact path="/blog/:slug/edit" component={PostEditorPage} staffOnly fallbackPath="/developer" />
     <Route exact path="/blog/:slug" component={PostDetailPage} />
-    <Route exact path="/blog" render={() => <PostsPage title="기록" eyebrow="기록" description="개발하며 정리한 것들과 오래 남기고 싶은 메모입니다." kind="technical" writePath="/blog/new" />} />
+    <Redirect exact from="/blog" to="/developer" />
     <Route component={NotFoundPage} />
   </Switch></MainLayout>
 }
