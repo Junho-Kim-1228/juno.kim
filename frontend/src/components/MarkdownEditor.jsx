@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react'
 
 import { contentImageApi } from '../api/contentImages'
+import { resizeMarkdownImage } from '../utils/markdownImages'
+import { MarkdownContent } from './MarkdownContent'
 
 const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp'])
 const maxImageSize = 5 * 1024 * 1024
@@ -17,6 +19,7 @@ export function MarkdownEditor({ label, value, onChange, rows = 12, required = f
   const valueRef = useRef(value)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState(null)
+  const [previewOpen, setPreviewOpen] = useState(false)
   valueRef.current = value
 
   const uploadAndInsert = async (file, selectionStart, selectionEnd) => {
@@ -42,10 +45,11 @@ export function MarkdownEditor({ label, value, onChange, rows = 12, required = f
       const prefix = before && !before.endsWith('\n') ? '\n\n' : ''
       const suffix = after && !after.startsWith('\n') ? '\n\n' : ''
       const alt = file.name.replace(/\.[^.]+$/, '').replaceAll('[', '').replaceAll(']', '').trim() || '본문 이미지'
-      const markdown = `${prefix}![${alt}](${uploaded.url})${suffix}`
+      const markdown = `${prefix}![${alt}](${uploaded.url}#width=100)${suffix}`
       const nextValue = `${before}${markdown}${after}`
       const nextCursor = before.length + markdown.length
       onChange(nextValue)
+      setPreviewOpen(true)
       requestAnimationFrame(() => {
         textareaRef.current?.focus()
         textareaRef.current?.setSelectionRange(nextCursor, nextCursor)
@@ -82,13 +86,19 @@ export function MarkdownEditor({ label, value, onChange, rows = 12, required = f
     handleFile(file)
   }
 
+  const handleImageResize = (src, width, position) => {
+    onChange(resizeMarkdownImage(valueRef.current, src, width, position))
+  }
+
   return <div className="markdown-editor">
     <label>{label}<textarea ref={textareaRef} rows={rows} value={value} onChange={(event) => onChange(event.target.value)} onPaste={handlePaste} onDrop={handleDrop} required={required} /></label>
     <div className="markdown-toolbar">
       <button className="button-link secondary small" type="button" disabled={uploading} onClick={() => fileInputRef.current?.click()}>{uploading ? '업로드 중…' : '본문 이미지 추가'}</button>
-      <span>커서 위치에 삽입됩니다. 붙여넣기와 드래그도 가능합니다.</span>
+      <button className="button-link secondary small" type="button" onClick={() => setPreviewOpen((open) => !open)}>{previewOpen ? '미리보기 닫기' : '미리보기·크기 조절'}</button>
+      <span>이미지는 커서 위치에 삽입됩니다. 붙여넣기와 드래그도 가능합니다.</span>
       <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(event) => handleFile(event.target.files[0])} />
     </div>
     {error && <p className="field-error" role="alert">{error}</p>}
+    {previewOpen && value.trim() && <div className="markdown-preview"><p className="markdown-preview-note">이미지 오른쪽 아래 손잡이를 드래그해 크기를 조절하세요.</p><MarkdownContent onImageResize={handleImageResize}>{value}</MarkdownContent></div>}
   </div>
 }
