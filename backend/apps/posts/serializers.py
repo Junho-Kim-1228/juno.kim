@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import serializers
 
 from apps.users.serializers import UserSummarySerializer
@@ -38,6 +39,7 @@ class PostSerializer(serializers.ModelSerializer):
         required=False,
     )
     comment_count = serializers.IntegerField(read_only=True)
+    remove_cover_image = serializers.BooleanField(write_only=True, required=False)
 
     class Meta:
         model = Post
@@ -53,6 +55,7 @@ class PostSerializer(serializers.ModelSerializer):
             "excerpt",
             "content",
             "cover_image",
+            "remove_cover_image",
             "status",
             "is_featured",
             "comment_count",
@@ -69,3 +72,26 @@ class PostSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         )
+
+    def validate(self, attrs):
+        if attrs.get("remove_cover_image") and attrs.get("cover_image"):
+            raise serializers.ValidationError(
+                {"cover_image": "새 이미지를 올리면서 기존 이미지를 제거할 수 없습니다."}
+            )
+        return attrs
+
+    def create(self, validated_data):
+        validated_data.pop("remove_cover_image", None)
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        remove_cover_image = validated_data.pop("remove_cover_image", False)
+        old_image_name = instance.cover_image.name if remove_cover_image and instance.cover_image else ""
+        old_image_storage = instance.cover_image.storage if old_image_name else None
+        if remove_cover_image:
+            validated_data["cover_image"] = None
+
+        instance = super().update(instance, validated_data)
+        if old_image_name:
+            transaction.on_commit(lambda: old_image_storage.delete(old_image_name))
+        return instance

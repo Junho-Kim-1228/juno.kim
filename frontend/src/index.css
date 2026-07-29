@@ -173,6 +173,11 @@ main { flex: 1; }
 .detail-page { max-width: 860px; }
 .detail-page h1 { font-size: clamp(2.5rem, 6vw, 4.4rem); }
 .cover-image { width: 100%; max-height: 520px; object-fit: cover; margin: 30px 0; border-radius: 4px; border: 1px solid var(--line); }
+.editor-cover { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; color: var(--muted); }
+.editor-cover img { width: 160px; height: 96px; object-fit: cover; border: 1px solid var(--line); border-radius: 4px; }
+.editor-cover p { margin: 0; }
+.text-button { border: 0; padding: 0; background: transparent; color: var(--accent); cursor: pointer; }
+.text-button.danger { color: #b4534b; }
 .prose { margin: 38px 0; color: var(--muted); font-size: 1.04rem; line-height: 1.95; white-space: pre-wrap; }
 .post-byline { align-items: center; padding: 16px 0; border-bottom: 1px solid var(--line); }
 .post-byline a { color: var(--accent); }

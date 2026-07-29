@@ -120,6 +120,22 @@ class PostAPITests(APITestCase):
         self.assertEqual(post.author, self.staff)
         self.assertTrue(post.is_featured)
 
+    def test_staff_can_remove_existing_cover_image(self):
+        self.published.cover_image = "posts/2026/07/existing.jpg"
+        self.published.save(update_fields=("cover_image",))
+        self.client.force_authenticate(self.staff)
+
+        response = self.client.patch(
+            f"/api/v1/posts/{self.published.slug}/",
+            {"remove_cover_image": True},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.published.refresh_from_db()
+        self.assertFalse(self.published.cover_image)
+        self.assertIsNone(response.data["cover_image"])
+
     def test_only_staff_can_change_categories_and_tags(self):
         self.client.force_authenticate(self.member)
         member_category = self.client.post(
