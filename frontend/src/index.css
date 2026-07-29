@@ -208,6 +208,7 @@ main { flex: 1; }
 .comment-head strong { color: #111827; }
 .username { color: var(--muted); font-weight: 400; }
 .operator-badge { display: inline-block; margin-left: 6px; padding: 1px 6px; color: var(--accent); border: 1px solid var(--accent); border-radius: 999px; font-size: .69rem; font-weight: 700; vertical-align: middle; }
+.operator-badge.before-author { margin-right: 6px; margin-left: 0; }
 .report-button { margin-top: 6px; color: var(--muted); font-size: .78rem; }
 .text-button { padding: 4px 6px; color: var(--accent); background: transparent; }
 .text-button.danger { color: var(--danger); }

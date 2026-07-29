@@ -11,7 +11,7 @@ const initialForm = { message: '' }
 
 function EntryAuthor({ entry }) {
   if (!entry.author) return <strong>{entry.name} <span className="username">(@legacy)</span></strong>
-  return <strong>{entry.author.display_name || entry.author.username} <span className="username">(@{entry.author.username})</span>{entry.author.is_staff && <span className="operator-badge">사이트 운영자</span>}</strong>
+  return <strong>{entry.author.is_staff && <span className="operator-badge before-author">사이트 운영자</span>}{entry.author.display_name || entry.author.username} <span className="username">(@{entry.author.username})</span></strong>
 }
 
 export function GuestbookSection({ compact = false, standalone = false }) {
