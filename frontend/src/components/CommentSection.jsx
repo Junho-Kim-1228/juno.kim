@@ -3,12 +3,18 @@ import { Link } from 'react-router-dom'
 
 import { authApi } from '../api/auth'
 import { commentApi } from '../api/comments'
+import { reportApi } from '../api/reports'
 import { useAuth } from '../hooks/useAuth'
 import { ErrorState, LoadingState } from './AsyncState'
 
-function CommentItem({ comment, user, onReply, onEdit, onDelete, isReply = false }) {
+function AuthorName({ author }) {
+  return <strong>{author.display_name || author.username} <span className="username">(@{author.username})</span>{author.is_staff && <span className="operator-badge">사이트 운영자</span>}</strong>
+}
+
+function CommentItem({ comment, user, onReply, onEdit, onDelete, onReport, isReply = false }) {
   const canManage = user && (user.is_staff || user.id === comment.author.id)
-  return <li className="comment"><div className="comment-head"><strong>{comment.author.display_name || comment.author.username}</strong><time>{new Date(comment.created_at).toLocaleString('ko-KR')}</time></div><p>{comment.content}</p>{user?.email_verified && !isReply && <button className="text-button" type="button" onClick={() => onReply(comment.id)}>답글</button>}{canManage && <button className="text-button" type="button" onClick={() => onEdit(comment)}>수정</button>}{canManage && <button className="text-button danger" type="button" onClick={() => onDelete(comment.id)}>삭제</button>}{comment.replies?.length > 0 && <ul className="reply-list">{comment.replies.map((reply) => <CommentItem key={reply.id} comment={reply} user={user} onReply={onReply} onEdit={onEdit} onDelete={onDelete} isReply />)}</ul>}</li>
+  const canReport = user?.email_verified && user.id !== comment.author.id
+  return <li className="comment"><div className="comment-head"><AuthorName author={comment.author} /><time>{new Date(comment.created_at).toLocaleString('ko-KR')}</time></div><p>{comment.content}</p>{user?.email_verified && !isReply && <button className="text-button" type="button" onClick={() => onReply(comment.id)}>답글</button>}{canManage && <button className="text-button" type="button" onClick={() => onEdit(comment)}>수정</button>}{canManage && <button className="text-button danger" type="button" onClick={() => onDelete(comment.id)}>삭제</button>}{canReport && <button className="text-button report-button" type="button" onClick={() => onReport(comment.id)}>사칭 신고</button>}{comment.replies?.length > 0 && <ul className="reply-list">{comment.replies.map((reply) => <CommentItem key={reply.id} comment={reply} user={user} onReply={onReply} onEdit={onEdit} onDelete={onDelete} onReport={onReport} isReply />)}</ul>}</li>
 }
 
 export function CommentSection({ postSlug }) {
@@ -19,6 +25,7 @@ export function CommentSection({ postSlug }) {
   const submit = async (event) => { event.preventDefault(); if (!content.trim()) return; try { await commentApi.create({ post_slug: postSlug, content, ...(parent ? { parent } : {}) }); setContent(''); setParent(null); await loadComments() } catch (requestError) { setError(requestError) } }
   const editComment = async (comment) => { const nextContent = window.prompt('수정할 댓글을 입력해 주세요.', comment.content); if (!nextContent?.trim()) return; try { await commentApi.update(comment.id, nextContent); await loadComments() } catch (requestError) { setError(requestError) } }
   const deleteComment = async (id) => { if (!window.confirm('댓글을 삭제하시겠습니까?')) return; try { await commentApi.remove(id); await loadComments() } catch (requestError) { setError(requestError) } }
+  const report = async (id) => { const reason = window.prompt('사칭으로 의심되는 이유를 적어 주세요.'); if (reason === null) return; try { setNotice((await reportApi.impersonation('comment', id, reason)).detail) } catch (requestError) { setError(requestError) } }
   const resend = async () => { setError(null); try { setNotice((await authApi.resendVerification()).detail); await reloadUser() } catch (requestError) { setError(requestError) } }
-  return <section className="comments-section"><h2>댓글</h2>{!user ? <p className="muted">댓글을 작성하려면 <Link to="/login">로그인</Link>해 주세요.</p> : !user.email_verified ? <p className="muted">댓글을 작성하려면 이메일 인증이 필요합니다. <button type="button" className="text-button" onClick={resend}>인증 메일 재발송</button></p> : <form className="stack-form" onSubmit={submit}>{parent && <p className="form-note">댓글 #{parent}에 답글 작성 중 <button className="text-button" type="button" onClick={() => setParent(null)}>취소</button></p>}<textarea value={content} onChange={(event) => setContent(event.target.value)} maxLength="3000" placeholder="댓글을 남겨 주세요." required /><button type="submit">댓글 등록</button></form>}{notice && <p className="success-message">{notice}</p>}{error && <ErrorState error={error} />}{loading ? <LoadingState /> : <ul className="comment-list">{comments.map((comment) => <CommentItem key={comment.id} comment={comment} user={user} onReply={setParent} onEdit={editComment} onDelete={deleteComment} />)}</ul>}</section>
+  return <section className="comments-section"><h2>댓글</h2>{!user ? <p className="muted">댓글을 작성하려면 <Link to="/login">로그인</Link>해 주세요.</p> : !user.email_verified ? <p className="muted">댓글을 작성하려면 이메일 인증이 필요합니다. <button type="button" className="text-button" onClick={resend}>인증 메일 재발송</button></p> : <form className="stack-form" onSubmit={submit}>{parent && <p className="form-note">댓글 #{parent}에 답글 작성 중 <button className="text-button" type="button" onClick={() => setParent(null)}>취소</button></p>}<textarea value={content} onChange={(event) => setContent(event.target.value)} maxLength="3000" placeholder="댓글을 남겨 주세요." required /><button type="submit">댓글 등록</button></form>}{notice && <p className="success-message">{notice}</p>}{error && <ErrorState error={error} />}{loading ? <LoadingState /> : <ul className="comment-list">{comments.map((comment) => <CommentItem key={comment.id} comment={comment} user={user} onReply={setParent} onEdit={editComment} onDelete={deleteComment} onReport={report} />)}</ul>}</section>
 }

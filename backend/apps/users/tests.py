@@ -26,7 +26,7 @@ class AuthenticationAPITests(APITestCase):
 
     def test_registration_login_refresh_and_logout(self):
         credentials = {
-            "username": "auth-user",
+            "username": "auth_user",
             "email": "auth@example.com",
             "password": "StrongTemporary!2026",
         }
@@ -80,7 +80,7 @@ class AuthenticationAPITests(APITestCase):
         response = self.client.post(
             "/api/v1/auth/register/",
             {
-                "username": "malicious-register",
+                "username": "malicious_register",
                 "email": "malicious@example.com",
                 "password": "StrongTemporary!2026",
                 "is_staff": True,
@@ -91,13 +91,13 @@ class AuthenticationAPITests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        user = User.objects.get(username="malicious-register")
+        user = User.objects.get(username="malicious_register")
         self.assertFalse(user.is_staff)
         self.assertFalse(user.is_superuser)
 
     def test_registration_rejects_duplicate_email(self):
         User.objects.create_user(
-            username="existing-user",
+            username="existing_user",
             email="duplicate@example.com",
             password="StrongTemporary!2026",
         )
@@ -105,7 +105,7 @@ class AuthenticationAPITests(APITestCase):
         response = self.client.post(
             "/api/v1/auth/register/",
             {
-                "username": "duplicate-email-user",
+                "username": "duplicate_email_user",
                 "email": "duplicate@example.com",
                 "password": "StrongTemporary!2026",
             },

@@ -197,6 +197,9 @@ main { flex: 1; }
 .reply-list { margin: 14px 0 0 26px; }
 .comment-head { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: .82rem; }
 .comment-head strong { color: #111827; }
+.username { color: var(--muted); font-weight: 400; }
+.operator-badge { display: inline-block; margin-left: 6px; padding: 1px 6px; color: var(--accent); border: 1px solid var(--accent); border-radius: 999px; font-size: .69rem; font-weight: 700; vertical-align: middle; }
+.report-button { margin-top: 6px; color: var(--muted); font-size: .78rem; }
 .text-button { padding: 4px 6px; color: var(--accent); background: transparent; }
 .text-button.danger { color: var(--danger); }
 .state-message { width: min(1040px, calc(100% - 32px)); margin: 34px auto; color: var(--muted); }

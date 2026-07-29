@@ -2,6 +2,7 @@ from django.contrib.auth import password_validation
 from django.db.models.functions import Lower
 from rest_framework import serializers
 
+from .identity import validate_display_name, validate_username
 from .models import Profile, User
 
 
@@ -19,13 +20,19 @@ class ProfileSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ("created_at", "updated_at")
 
+    def validate_display_name(self, value):
+        try:
+            return validate_display_name(value)
+        except Exception as error:
+            raise serializers.ValidationError(error.messages[0]) from error
+
 
 class UserSummarySerializer(serializers.ModelSerializer):
     display_name = serializers.CharField(source="profile.display_name", read_only=True)
 
     class Meta:
         model = User
-        fields = ("id", "username", "display_name")
+        fields = ("id", "username", "display_name", "is_staff")
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -54,6 +61,12 @@ class UserSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("An account with this email already exists.")
         return normalized
 
+    def validate_username(self, value):
+        try:
+            return validate_username(value)
+        except Exception as error:
+            raise serializers.ValidationError(error.messages[0]) from error
+
     def update(self, instance, validated_data):
         email_changed = "email" in validated_data and validated_data["email"] != instance.email
         if email_changed:
@@ -78,6 +91,12 @@ class RegistrationSerializer(serializers.ModelSerializer):
         if User.objects.annotate(email_normalized=Lower("email")).filter(email_normalized=normalized).exists():
             raise serializers.ValidationError("An account with this email already exists.")
         return normalized
+
+    def validate_username(self, value):
+        try:
+            return validate_username(value)
+        except Exception as error:
+            raise serializers.ValidationError(error.messages[0]) from error
 
     def create(self, validated_data):
         validated_data["is_staff"] = False

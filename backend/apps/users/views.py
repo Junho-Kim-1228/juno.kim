@@ -14,7 +14,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from .cookies import delete_refresh_cookie, set_refresh_cookie
 from .email import send_verification_email
-from .models import EmailVerificationToken
+from .models import EmailVerificationToken, ImpersonationReport
+from apps.permissions import IsVerifiedUserOrReadOnly
 from .security import VerificationResendAccountThrottle, VerificationResendIPThrottle
 from .serializers import (
     LoginSerializer,
@@ -161,6 +162,48 @@ class ResendVerificationEmailView(APIView):
         except Exception:
             return Response({"detail": "Unable to send verification email right now. Please try again later."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
         return Response({"detail": "Verification email sent."})
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class ImpersonationReportCreateView(APIView):
+    permission_classes = (IsVerifiedUserOrReadOnly,)
+
+    def post(self, request):
+        target_type = str(request.data.get("target_type", ""))
+        try:
+            target_id = int(request.data.get("target_id"))
+        except (TypeError, ValueError):
+            return Response({"detail": "Invalid report target."}, status=status.HTTP_400_BAD_REQUEST)
+        reason = str(request.data.get("reason", "")).strip()
+        if len(reason) > 500:
+            return Response({"detail": "Report reason must be 500 characters or less."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if target_type == "comment":
+            from apps.comments.models import Comment
+
+            target = Comment.objects.filter(pk=target_id).first()
+            if not target:
+                return Response({"detail": "Comment not found."}, status=status.HTTP_404_NOT_FOUND)
+            if target.author_id == request.user.id:
+                return Response({"detail": "You cannot report your own content."}, status=status.HTTP_400_BAD_REQUEST)
+            if ImpersonationReport.objects.filter(reporter=request.user, comment=target).exists():
+                return Response({"detail": "You have already reported this item."}, status=status.HTTP_400_BAD_REQUEST)
+            report = ImpersonationReport.objects.create(reporter=request.user, comment=target, reason=reason)
+        elif target_type == "guestbook":
+            from apps.guestbook.models import GuestbookEntry
+
+            target = GuestbookEntry.objects.filter(pk=target_id).first()
+            if not target:
+                return Response({"detail": "Guestbook entry not found."}, status=status.HTTP_404_NOT_FOUND)
+            if target.author_id == request.user.id:
+                return Response({"detail": "You cannot report your own content."}, status=status.HTTP_400_BAD_REQUEST)
+            if ImpersonationReport.objects.filter(reporter=request.user, guestbook_entry=target).exists():
+                return Response({"detail": "You have already reported this item."}, status=status.HTTP_400_BAD_REQUEST)
+            report = ImpersonationReport.objects.create(reporter=request.user, guestbook_entry=target, reason=reason)
+        else:
+            return Response({"detail": "Invalid report target."}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({"id": report.id, "detail": "Report received."}, status=status.HTTP_201_CREATED)
 
 
 class MeView(generics.RetrieveUpdateAPIView):

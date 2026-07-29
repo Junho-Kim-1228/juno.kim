@@ -23,9 +23,9 @@ class EmailVerificationAPITests(APITestCase):
         self.headers = {"HTTP_X_CSRFTOKEN": self.csrf}
 
     def test_registration_normalizes_email_and_one_time_token_verifies_user(self):
-        response = self.client.post("/api/v1/auth/register/", {"username": "verify-user", "email": "Verify@Example.COM", "password": "StrongTemporary!2026"}, format="json", **self.headers)
+        response = self.client.post("/api/v1/auth/register/", {"username": "verify_user", "email": "Verify@Example.COM", "password": "StrongTemporary!2026"}, format="json", **self.headers)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        user = User.objects.get(username="verify-user")
+        user = User.objects.get(username="verify_user")
         self.assertEqual(user.email, "verify@example.com")
         self.assertFalse(user.email_verified)
         self.assertEqual(len(mail.outbox), 1)
@@ -59,6 +59,38 @@ class EmailVerificationAPITests(APITestCase):
         self.assertEqual([response.status_code for response in responses[:3]], [status.HTTP_201_CREATED] * 3)
         self.assertEqual(responses[3].status_code, status.HTTP_429_TOO_MANY_REQUESTS)
 
+    def test_reserved_and_confusable_username_or_display_name_is_rejected(self):
+        for username in ("juno", "Juno", "ｊｕｎｏ", "juno_kim"):
+            response = self.client.post("/api/v1/auth/register/", {"username": username, "email": f"{username.encode('unicode_escape').decode()}@example.com", "password": "StrongTemporary!2026"}, format="json", **self.headers)
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        member = User.objects.create_user(username="normal_user", email="normal@example.com", password="StrongTemporary!2026")
+        self.client.force_authenticate(member)
+        for display_name in ("김준호", "Juno Kim", "Ｊｕｎｏ", "관리자"):
+            response = self.client.patch("/api/v1/auth/profile/", {"display_name": display_name}, format="json", **self.headers)
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_verified_user_can_report_impersonation_and_report_is_admin_registered(self):
+        author = User.objects.create_user(username="reported_user", email="reported@example.com", password="StrongTemporary!2026")
+        author.email_verified = True
+        author.save(update_fields=("email_verified",))
+        post = Post.objects.create(author=author, title="Published", excerpt="excerpt", content="content", status=Post.Status.PUBLISHED)
+        comment = post.comments.create(author=author, content="comment")
+        guestbook_entry = GuestbookEntry.objects.create(author=author, name="reported_user", message="guestbook")
+        reporter = User.objects.create_user(username="reporter_user", email="reporter@example.com", password="StrongTemporary!2026")
+        reporter.email_verified = True
+        reporter.save(update_fields=("email_verified",))
+        self.client.force_authenticate(reporter)
+        response = self.client.post("/api/v1/reports/impersonation/", {"target_type": "comment", "target_id": comment.id, "reason": "looks misleading"}, format="json", **self.headers)
+        guestbook_response = self.client.post("/api/v1/reports/impersonation/", {"target_type": "guestbook", "target_id": guestbook_entry.id, "reason": "looks misleading"}, format="json", **self.headers)
+        from .models import ImpersonationReport
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(guestbook_response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(ImpersonationReport.objects.filter(comment=comment, reporter=reporter).exists())
+        self.assertTrue(ImpersonationReport.objects.filter(guestbook_entry=guestbook_entry, reporter=reporter).exists())
+        self.assertIn(ImpersonationReport, admin.site._registry)
+
     def test_guestbook_ip_rate_limit_is_independent_from_account_limit(self):
         first = User.objects.create_user(username="ip-first", email="ip-first@example.com", password="StrongTemporary!2026")
         second = User.objects.create_user(username="ip-second", email="ip-second@example.com", password="StrongTemporary!2026")
@@ -87,6 +119,12 @@ class SecurityAdminAndTokenTests(TestCase):
         self.assertFalse(user_admin.has_change_permission(request, self.member))
         self.assertTrue(user_admin.has_module_permission(super_request))
         self.assertTrue(user_admin.has_change_permission(super_request, self.member))
+
+    def test_operator_badge_flag_is_only_true_for_staff(self):
+        from .serializers import UserSummarySerializer
+
+        self.assertFalse(UserSummarySerializer(self.member).data["is_staff"])
+        self.assertTrue(UserSummarySerializer(self.staff).data["is_staff"])
 
     def test_sensitive_account_change_blacklists_outstanding_refresh_tokens(self):
         refresh = RefreshToken.for_user(self.member)

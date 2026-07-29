@@ -5,10 +5,12 @@ from datetime import timedelta
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
-from django.core.validators import FileExtensionValidator
+from django.core.validators import FileExtensionValidator, RegexValidator
 from django.db import models
 from django.db import transaction
 from django.utils import timezone
+
+from .identity import validate_display_name, validate_username
 
 
 def validate_avatar_size(file):
@@ -22,6 +24,11 @@ class User(AbstractUser):
 
     email = models.EmailField("이메일", unique=True)
 
+    username = models.CharField(
+        max_length=150,
+        unique=True,
+        validators=[RegexValidator(r"^[a-z0-9_]+$", "username은 영문 소문자, 숫자, 밑줄만 사용할 수 있습니다.")],
+    )
     email_verified = models.BooleanField("email verified", default=False)
     email_verified_at = models.DateTimeField("email verified at", null=True, blank=True)
 
@@ -31,8 +38,13 @@ class User(AbstractUser):
         return self.username
 
     def save(self, *args, **kwargs):
+        self.username = self.username.strip()
         self.email = self.email.strip().lower()
         super().save(*args, **kwargs)
+
+    def clean(self):
+        super().clean()
+        validate_username(self.username)
 
 
 class Profile(models.Model):
@@ -61,6 +73,39 @@ class Profile(models.Model):
 
     def __str__(self):
         return f"{self.user.username} profile"
+
+    def clean(self):
+        super().clean()
+        validate_display_name(self.display_name)
+
+
+class ImpersonationReport(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        REVIEWED = "reviewed", "Reviewed"
+        DISMISSED = "dismissed", "Dismissed"
+
+    reporter = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="impersonation_reports")
+    comment = models.ForeignKey("comments.Comment", null=True, blank=True, on_delete=models.CASCADE, related_name="impersonation_reports")
+    guestbook_entry = models.ForeignKey("guestbook.GuestbookEntry", null=True, blank=True, on_delete=models.CASCADE, related_name="impersonation_reports")
+    reason = models.CharField(max_length=500, blank=True)
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.PENDING)
+    created_at = models.DateTimeField(auto_now_add=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ("-created_at",)
+        constraints = [
+            models.CheckConstraint(
+                condition=(models.Q(comment__isnull=False, guestbook_entry__isnull=True) | models.Q(comment__isnull=True, guestbook_entry__isnull=False)),
+                name="impersonation_report_has_one_target",
+            ),
+        ]
+        verbose_name = "Impersonation report"
+        verbose_name_plural = "Impersonation reports"
+
+    def __str__(self):
+        return f"{self.reporter} report #{self.pk}"
 
 
 class EmailVerificationToken(models.Model):
