@@ -183,6 +183,8 @@ class AuditLog(models.Model):
         MFA_REMOVED = "mfa_removed", "MFA removed"
         LOGIN_FAILED = "login_failed", "Login failed"
         LOGIN_LOCKED = "login_locked", "Login locked"
+        VERIFICATION_EMAIL_SENT = "verification_email_sent", "Verification email sent"
+        VERIFICATION_EMAIL_FAILED = "verification_email_failed", "Verification email failed"
 
     actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="audit_actions")
     target_user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="audit_targets")
@@ -197,6 +199,24 @@ class AuditLog(models.Model):
         ordering = ("-created_at",)
         verbose_name = "Audit log"
         verbose_name_plural = "Audit logs"
+
+
+class OperationalEvent(AuditLog):
+    """Read-only, staff-safe view of selected operational audit events."""
+
+    ACTIONS = (
+        AuditLog.Action.LOGIN_FAILED,
+        AuditLog.Action.LOGIN_LOCKED,
+        AuditLog.Action.MFA_ENROLLED,
+        AuditLog.Action.MFA_REMOVED,
+        AuditLog.Action.VERIFICATION_EMAIL_SENT,
+        AuditLog.Action.VERIFICATION_EMAIL_FAILED,
+    )
+
+    class Meta:
+        proxy = True
+        verbose_name = "운영 기록"
+        verbose_name_plural = "운영 기록"
 
 
 def write_audit_log(*, action, actor=None, target_user=None, request=None, obj=None, details=None):

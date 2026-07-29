@@ -1,8 +1,10 @@
+import json
+
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.utils import timezone
 
-from .models import AuditLog, ImpersonationReport, Profile, User, write_audit_log
+from .models import AuditLog, ImpersonationReport, OperationalEvent, Profile, User, write_audit_log
 
 
 class ProfileInline(admin.StackedInline):
@@ -72,6 +74,73 @@ class AuditLogAdmin(admin.ModelAdmin):
 
     def has_view_permission(self, request, obj=None):
         return request.user.is_active and request.user.is_superuser
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(OperationalEvent)
+class OperationalEventAdmin(admin.ModelAdmin):
+    """Expose only selected, redacted operational metadata to active staff."""
+
+    list_display = ("created_at", "event_name", "account", "result", "error_type")
+    list_filter = ("action", "created_at")
+    search_fields = ("target_user__username",)
+    date_hierarchy = "created_at"
+    fields = ("created_at", "event_name", "account", "result", "error_type", "safe_details")
+    readonly_fields = fields
+
+    EVENT_NAMES = {
+        AuditLog.Action.LOGIN_FAILED: "로그인 실패",
+        AuditLog.Action.LOGIN_LOCKED: "로그인 잠금",
+        AuditLog.Action.MFA_ENROLLED: "관리자 MFA 등록",
+        AuditLog.Action.MFA_REMOVED: "관리자 MFA 삭제",
+        AuditLog.Action.VERIFICATION_EMAIL_SENT: "인증메일 발송 성공",
+        AuditLog.Action.VERIFICATION_EMAIL_FAILED: "인증메일 발송 실패",
+    }
+    SAFE_DETAIL_KEYS = ("result", "error_type", "username", "device")
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).filter(action__in=OperationalEvent.ACTIONS)
+
+    @admin.display(description="이벤트", ordering="action")
+    def event_name(self, obj):
+        return self.EVENT_NAMES.get(obj.action, obj.action)
+
+    @admin.display(description="계정", ordering="target_user__username")
+    def account(self, obj):
+        if obj.target_user_id:
+            return obj.target_user.username
+        return str(obj.details.get("username", "-"))[:150]
+
+    @admin.display(description="결과")
+    def result(self, obj):
+        return str(obj.details.get("result", "-"))[:32]
+
+    @admin.display(description="오류 종류")
+    def error_type(self, obj):
+        return str(obj.details.get("error_type", "-"))[:100]
+
+    @admin.display(description="안전한 세부 정보")
+    def safe_details(self, obj):
+        details = {
+            key: obj.details[key]
+            for key in self.SAFE_DETAIL_KEYS
+            if key in obj.details
+        }
+        return json.dumps(details, ensure_ascii=False, sort_keys=True)
+
+    def has_module_permission(self, request):
+        return request.user.is_active and request.user.is_staff
+
+    def has_view_permission(self, request, obj=None):
+        return request.user.is_active and request.user.is_staff
 
     def has_add_permission(self, request):
         return False
