@@ -7,16 +7,16 @@ import { GuestbookSection } from '../components/GuestbookSection'
 import { PostCard } from '../components/PostCard'
 import { useAuth } from '../hooks/useAuth'
 
-const categories = ['일상', '취미', '사진', '개발']
-
 export function HomePage() {
   const { user } = useAuth()
   const [posts, setPosts] = useState([])
+  const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
   useEffect(() => {
     postApi.list().then((items) => setPosts(items.slice(0, 5))).catch(setError).finally(() => setLoading(false))
+    postApi.categories().then(setCategories).catch(setError)
   }, [])
 
   return <>
@@ -26,9 +26,9 @@ export function HomePage() {
         {user?.is_staff || user?.email_verified ? <Link className="button-link" to="/board/new">게시판 글쓰기</Link> : <Link className="button-link" to="/board">게시판 둘러보기</Link>}
         <a className="button-link secondary" href="#guestbook">방명록 남기기</a>
       </div>
-      <div className="category-links" aria-label="글 분류">
-        {categories.map((category) => <Link key={category} to={`/board?category=${encodeURIComponent(category)}`}>{category}</Link>)}
-      </div>
+      {categories.length > 0 && <div className="category-links" aria-label="글 분류">
+        {categories.map((category) => <Link key={category.id} to={`/board?category=${encodeURIComponent(category.slug)}`}>{category.name}</Link>)}
+      </div>}
     </section>
 
     <section className="page-section home-feed">
