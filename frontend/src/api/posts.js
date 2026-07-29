@@ -19,6 +19,9 @@ export const postApi = {
     const { data } = await apiClient.patch(`/posts/${slug}/`, payload)
     return data
   },
+  async remove(slug) {
+    await apiClient.delete(`/posts/${slug}/`)
+  },
   async categories() {
     const { data } = await apiClient.get('/categories/')
     return unwrap(data)

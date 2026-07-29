@@ -74,3 +74,21 @@ class VerifiedMemberPostWriteTests(APITestCase):
         self.assertEqual(post.title, "Edited Member Post")
         self.assertEqual(post.status, Post.Status.PUBLISHED)
         self.assertFalse(post.is_featured)
+
+    def test_verified_member_can_delete_own_post_but_not_another_members_post(self):
+        own_post = Post.objects.create(
+            author=self.member,
+            title="Own Post",
+            excerpt="excerpt",
+            content="content",
+            status=Post.Status.PUBLISHED,
+        )
+        self.client.force_authenticate(self.member)
+
+        other_delete = self.client.delete(f"/api/v1/posts/{self.other_post.slug}/")
+        own_delete = self.client.delete(f"/api/v1/posts/{own_post.slug}/")
+
+        self.assertEqual(other_delete.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(own_delete.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertTrue(Post.objects.filter(pk=self.other_post.pk).exists())
+        self.assertFalse(Post.objects.filter(pk=own_post.pk).exists())
