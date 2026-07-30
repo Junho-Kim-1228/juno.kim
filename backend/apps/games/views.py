@@ -18,7 +18,7 @@ from .serializers import ReactionSubmissionSerializer
 
 
 MIN_REACTION_MS = 100
-MAX_REACTION_MS = 3000
+MAX_REACTION_MS = 10000
 CHALLENGE_TTL = timedelta(seconds=12)
 
 
@@ -123,7 +123,7 @@ class ReactionSubmissionView(APIView):
 
             reaction_ms = round((now - challenge.ready_at).total_seconds() * 1000)
             if not MIN_REACTION_MS <= reaction_ms <= MAX_REACTION_MS:
-                return Response({"detail": "측정 범위를 벗어난 기록입니다. 다시 시도해 주세요."}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"detail": "너무 늦었어요. 10초 안에 눌러 주세요."}, status=status.HTTP_400_BAD_REQUEST)
 
             challenge.used_at = now
             challenge.save(update_fields=("used_at",))

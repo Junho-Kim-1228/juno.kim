@@ -71,6 +71,12 @@ class ReactionGameAPITests(APITestCase):
         reused = self.client.post(reverse("reaction-submit"), {"challenge_id": str(challenge.pk)}, format="json")
         self.assertEqual(reused.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_server_accepts_a_normal_delayed_click_within_ten_seconds(self):
+        response = self.create_ready_challenge(8000)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertGreater(response.data["reaction_ms"], 7000)
+
     def test_public_leaderboard_and_authenticated_personal_rank(self):
         self.create_ready_challenge(230)
         self.client.force_authenticate(user=None)
