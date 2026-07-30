@@ -3,7 +3,7 @@ from rest_framework import permissions, status, viewsets
 from rest_framework.response import Response
 
 from apps.permissions import IsOwnerOrStaffOrReadOnly, IsVerifiedUserOrReadOnly
-from apps.users.security import CommentAccountThrottle, CommentIPThrottle
+from apps.users.security import CommentAccountHourlyThrottle, CommentAccountThrottle, CommentIPThrottle
 
 from .models import Comment
 from .serializers import CommentSerializer
@@ -15,7 +15,9 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def get_throttles(self):
         if self.action == "create":
-            return [CommentAccountThrottle(), CommentIPThrottle()]
+            if self.request.user.is_authenticated and self.request.user.is_staff:
+                return []
+            return [CommentAccountThrottle(), CommentIPThrottle(), CommentAccountHourlyThrottle()]
         return []
 
     def get_queryset(self):
@@ -31,12 +33,22 @@ class CommentViewSet(viewsets.ModelViewSet):
             pass
         elif user.is_authenticated:
             queryset = queryset.filter(
-                Q(is_active=True, post__status="published")
+                Q(
+                    is_active=True,
+                    author__is_active=True,
+                    post__status="published",
+                    post__author__is_active=True,
+                )
                 | Q(author=user)
                 | Q(post__author=user)
             )
         else:
-            queryset = queryset.filter(is_active=True, post__status="published")
+            queryset = queryset.filter(
+                is_active=True,
+                author__is_active=True,
+                post__status="published",
+                post__author__is_active=True,
+            )
         if self.action == "list":
             queryset = queryset.filter(parent__isnull=True)
         post_slug = self.request.query_params.get("post")

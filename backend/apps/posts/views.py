@@ -3,6 +3,7 @@ from rest_framework import generics, parsers, viewsets
 from rest_framework.throttling import UserRateThrottle
 
 from apps.permissions import IsOwnerOrStaffOrReadOnly, IsStaffOrReadOnly, IsVerifiedUserOrStaffOrReadOnly
+from apps.users.security import ContentImageAccountHourlyThrottle, PostAccountHourlyThrottle
 
 from .models import Category, Post, Tag
 from .serializers import CategorySerializer, ContentImageSerializer, PostSerializer, TagSerializer
@@ -17,6 +18,11 @@ class ContentImageUploadView(generics.CreateAPIView):
     permission_classes = (IsVerifiedUserOrStaffOrReadOnly,)
     parser_classes = (parsers.MultiPartParser, parsers.FormParser)
     throttle_classes = (ContentImageUploadThrottle,)
+
+    def get_throttles(self):
+        if self.request.user.is_authenticated and self.request.user.is_staff:
+            return []
+        return [ContentImageUploadThrottle(), ContentImageAccountHourlyThrottle()]
 
     def perform_create(self, serializer):
         serializer.save(uploader=self.request.user)
@@ -41,6 +47,13 @@ class PostViewSet(viewsets.ModelViewSet):
     permission_classes = (IsVerifiedUserOrStaffOrReadOnly, IsOwnerOrStaffOrReadOnly)
     lookup_field = "slug"
 
+    def get_throttles(self):
+        if self.action == "create" and not (
+            self.request.user.is_authenticated and self.request.user.is_staff
+        ):
+            return [PostAccountHourlyThrottle()]
+        return []
+
     def get_queryset(self):
         queryset = (
             Post.objects.select_related("author", "author__profile", "category")
@@ -64,7 +77,7 @@ class PostViewSet(viewsets.ModelViewSet):
                 return queryset.filter(author=user, status=Post.Status.DRAFT)
             return queryset.none()
         if public_only:
-            return queryset.filter(status=Post.Status.PUBLISHED)
+            return queryset.filter(status=Post.Status.PUBLISHED, author__is_active=True)
         if user.is_authenticated and user.is_staff:
             if self.action == "list":
                 return queryset.exclude(status=Post.Status.DRAFT)
@@ -72,11 +85,13 @@ class PostViewSet(viewsets.ModelViewSet):
         if user.is_authenticated:
             if self.action == "list":
                 return queryset.filter(
-                    Q(status=Post.Status.PUBLISHED)
+                    Q(status=Post.Status.PUBLISHED, author__is_active=True)
                     | Q(author=user, status=Post.Status.PRIVATE)
                 )
-            return queryset.filter(Q(status=Post.Status.PUBLISHED) | Q(author=user))
-        return queryset.filter(status=Post.Status.PUBLISHED)
+            return queryset.filter(
+                Q(status=Post.Status.PUBLISHED, author__is_active=True) | Q(author=user)
+            )
+        return queryset.filter(status=Post.Status.PUBLISHED, author__is_active=True)
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)

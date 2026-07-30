@@ -16,10 +16,42 @@ class ProfileInline(admin.StackedInline):
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
     inlines = (ProfileInline,)
-    list_display = ("username", "email", "email_verified", "is_staff", "is_active")
+    list_display = (
+        "username",
+        "email",
+        "email_verified",
+        "rate_limit_strikes",
+        "write_blocked_until",
+        "is_staff",
+        "is_active",
+    )
     search_fields = ("username", "email")
     ordering = ("username",)
-    actions = ("mark_email_verified", "ban_selected_members", "unban_selected_members")
+    actions = (
+        "mark_email_verified",
+        "ban_selected_members",
+        "unban_selected_members",
+        "clear_automatic_write_blocks",
+    )
+    readonly_fields = (
+        "rate_limit_strikes",
+        "last_rate_limit_strike_at",
+        "write_blocked_until",
+        "auto_blocked_at",
+    )
+    fieldsets = UserAdmin.fieldsets + (
+        (
+            "Automatic abuse protection",
+            {
+                "fields": (
+                    "rate_limit_strikes",
+                    "last_rate_limit_strike_at",
+                    "write_blocked_until",
+                    "auto_blocked_at",
+                )
+            },
+        ),
+    )
     add_fieldsets = UserAdmin.add_fieldsets + (
         ("연락처", {"fields": ("email",)}),
     )
@@ -41,6 +73,8 @@ class CustomUserAdmin(UserAdmin):
         return request.user.is_active and request.user.is_superuser
 
     def save_model(self, request, obj, form, change):
+        if change and "is_active" in form.changed_data and obj.is_active:
+            self._clear_automatic_block(obj)
         super().save_model(request, obj, form, change)
         if change:
             changed = [field for field in ("is_active", "is_staff", "is_superuser", "groups", "user_permissions") if field in form.changed_data]
@@ -72,8 +106,39 @@ class CustomUserAdmin(UserAdmin):
         members = list(self._eligible_members(queryset).filter(is_active=False))
         for member in members:
             member.is_active = True
-            member.save(update_fields=("is_active",))
+            self._clear_automatic_block(member)
+            member.save(
+                update_fields=(
+                    "is_active",
+                    "rate_limit_strikes",
+                    "last_rate_limit_strike_at",
+                    "write_blocked_until",
+                    "auto_blocked_at",
+                )
+            )
         self.message_user(request, f"{len(members)}개 일반 회원의 차단을 해제했습니다.")
+
+    @staticmethod
+    def _clear_automatic_block(member):
+        member.rate_limit_strikes = 0
+        member.last_rate_limit_strike_at = None
+        member.write_blocked_until = None
+        member.auto_blocked_at = None
+
+    @admin.action(description="자동 작성 차단 및 위반 기록 초기화")
+    def clear_automatic_write_blocks(self, request, queryset):
+        members = list(self._eligible_members(queryset))
+        for member in members:
+            self._clear_automatic_block(member)
+            member.save(
+                update_fields=(
+                    "rate_limit_strikes",
+                    "last_rate_limit_strike_at",
+                    "write_blocked_until",
+                    "auto_blocked_at",
+                )
+            )
+        self.message_user(request, f"{len(members)}개 일반 회원의 자동 제재 기록을 초기화했습니다.")
 
 
 @admin.register(Profile)
@@ -131,8 +196,17 @@ class OperationalEventAdmin(admin.ModelAdmin):
         AuditLog.Action.MFA_REMOVED: "관리자 MFA 삭제",
         AuditLog.Action.VERIFICATION_EMAIL_SENT: "인증메일 발송 성공",
         AuditLog.Action.VERIFICATION_EMAIL_FAILED: "인증메일 발송 실패",
+        AuditLog.Action.RATE_LIMIT_ENFORCED: "자동 작성 제재",
     }
-    SAFE_DETAIL_KEYS = ("result", "error_type", "username", "device")
+    SAFE_DETAIL_KEYS = (
+        "result",
+        "error_type",
+        "username",
+        "device",
+        "scope",
+        "stage",
+        "strike_count",
+    )
 
     def get_queryset(self, request):
         return super().get_queryset(request).filter(action__in=OperationalEvent.ACTIONS)

@@ -111,7 +111,7 @@ export function GuestbookSection({ compact = false, standalone = false }) {
   return <section className={`guestbook-section page-section${standalone ? ' standalone-page' : ''}`} id="guestbook">
     <div className="section-heading">
       <div><p className="eyebrow">방명록</p><h2>{compact ? '잠시 들렀다 간 이야기' : '방명록'}</h2></div>
-      <p className="section-note">인증된 로그인 사용자만 작성할 수 있습니다.</p>
+      {!authLoading && !user?.email_verified && <p className="section-note">인증된 로그인 사용자만 작성할 수 있습니다.</p>}
     </div>
 
     {authLoading ? <p className="guestbook-auth-note">로그인 상태를 확인하고 있습니다.</p>

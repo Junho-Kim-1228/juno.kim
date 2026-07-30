@@ -126,8 +126,11 @@ REST_FRAMEWORK = {
         "registration_ip_day": "10/day",
         "comment_user": "5/minute",
         "comment_ip": "10/minute",
+        "comment_user_hour": "20/hour",
         "guestbook_user": "3/minute",
         "guestbook_ip": "5/minute",
+        "guestbook_user_hour": "5/hour",
+        "post_user_hour": "5/hour",
         "verification_resend_user_burst": "1/minute",
         "verification_resend_user": "3/hour",
         "verification_resend_user_day": "5/day",
@@ -136,6 +139,7 @@ REST_FRAMEWORK = {
         "impersonation_report_user": "10/hour",
         "impersonation_report_ip": "20/hour",
         "content_image_upload": "20/hour",
+        "content_image_user_hour": "5/hour",
     },
 }
 

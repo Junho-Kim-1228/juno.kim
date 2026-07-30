@@ -40,6 +40,10 @@ class User(AbstractUser):
     )
     email_verified = models.BooleanField("email verified", default=False)
     email_verified_at = models.DateTimeField("email verified at", null=True, blank=True)
+    rate_limit_strikes = models.PositiveSmallIntegerField("rate limit strikes", default=0)
+    last_rate_limit_strike_at = models.DateTimeField("last rate limit strike at", null=True, blank=True)
+    write_blocked_until = models.DateTimeField("write blocked until", null=True, blank=True)
+    auto_blocked_at = models.DateTimeField("automatically blocked at", null=True, blank=True)
 
     REQUIRED_FIELDS = ["email"]
 
@@ -185,6 +189,7 @@ class AuditLog(models.Model):
         LOGIN_LOCKED = "login_locked", "Login locked"
         VERIFICATION_EMAIL_SENT = "verification_email_sent", "Verification email sent"
         VERIFICATION_EMAIL_FAILED = "verification_email_failed", "Verification email failed"
+        RATE_LIMIT_ENFORCED = "rate_limit_enforced", "Rate limit enforced"
 
     actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="audit_actions")
     target_user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="audit_targets")
@@ -211,6 +216,7 @@ class OperationalEvent(AuditLog):
         AuditLog.Action.MFA_REMOVED,
         AuditLog.Action.VERIFICATION_EMAIL_SENT,
         AuditLog.Action.VERIFICATION_EMAIL_FAILED,
+        AuditLog.Action.RATE_LIMIT_ENFORCED,
     )
 
     class Meta:

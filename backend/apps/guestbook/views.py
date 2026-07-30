@@ -1,10 +1,15 @@
+from django.db.models import Q
 from django.utils.decorators import method_decorator
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_protect
 from rest_framework import generics, permissions
 from rest_framework.response import Response
 from apps.permissions import IsStaffOrReadOnly, IsVerifiedUserOrReadOnly
-from apps.users.security import GuestbookAccountThrottle, GuestbookIPThrottle
+from apps.users.security import (
+    GuestbookAccountHourlyThrottle,
+    GuestbookAccountThrottle,
+    GuestbookIPThrottle,
+)
 
 from .models import GuestbookEntry, TodayStatus
 from .serializers import GuestbookEntrySerializer, GuestbookReplyUpdateSerializer, TodayStatusSerializer
@@ -14,7 +19,10 @@ from .serializers import GuestbookEntrySerializer, GuestbookReplyUpdateSerialize
 class GuestbookListCreateView(generics.ListCreateAPIView):
     permission_classes = (IsVerifiedUserOrReadOnly,)
     serializer_class = GuestbookEntrySerializer
-    queryset = GuestbookEntry.objects.filter(is_visible=True).select_related(
+    queryset = GuestbookEntry.objects.filter(
+        Q(author__is_active=True) | Q(author__isnull=True),
+        is_visible=True,
+    ).select_related(
         "author",
         "author__profile",
         "staff_replied_by",
@@ -23,7 +31,13 @@ class GuestbookListCreateView(generics.ListCreateAPIView):
 
     def get_throttles(self):
         if self.request.method == "POST":
-            return [GuestbookAccountThrottle(), GuestbookIPThrottle()]
+            if self.request.user.is_authenticated and self.request.user.is_staff:
+                return []
+            return [
+                GuestbookAccountThrottle(),
+                GuestbookIPThrottle(),
+                GuestbookAccountHourlyThrottle(),
+            ]
         return []
 
     def perform_create(self, serializer):

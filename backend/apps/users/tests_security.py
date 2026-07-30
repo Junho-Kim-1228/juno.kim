@@ -8,6 +8,7 @@ from django.core.management import call_command
 from django.db import IntegrityError, transaction
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
@@ -348,6 +349,16 @@ class SecurityAdminAndTokenTests(TestCase):
     def test_superuser_can_ban_and_unban_a_regular_member(self):
         refresh = RefreshToken.for_user(self.member)
         outstanding = OutstandingToken.objects.get(jti=refresh["jti"])
+        self.member.rate_limit_strikes = 3
+        self.member.last_rate_limit_strike_at = timezone.now()
+        self.member.auto_blocked_at = timezone.now()
+        self.member.save(
+            update_fields=(
+                "rate_limit_strikes",
+                "last_rate_limit_strike_at",
+                "auto_blocked_at",
+            )
+        )
         request = type("Request", (), {"user": self.superuser})()
         user_admin = admin.site._registry[User]
 
@@ -361,6 +372,10 @@ class SecurityAdminAndTokenTests(TestCase):
             user_admin.unban_selected_members(request, User.objects.filter(pk=self.member.pk))
         self.member.refresh_from_db()
         self.assertTrue(self.member.is_active)
+        self.assertEqual(self.member.rate_limit_strikes, 0)
+        self.assertIsNone(self.member.last_rate_limit_strike_at)
+        self.assertIsNone(self.member.write_blocked_until)
+        self.assertIsNone(self.member.auto_blocked_at)
 
     def test_unverified_staff_is_sent_to_mfa_enrollment_before_admin(self):
         client = self.client

@@ -39,7 +39,7 @@ class CommentSerializer(serializers.ModelSerializer):
         read_only_fields = ("id", "author", "replies", "created_at", "updated_at")
 
     def get_replies(self, obj):
-        replies = obj.replies.filter(is_active=True).select_related("author", "author__profile")
+        replies = obj.replies.filter(is_active=True, author__is_active=True).select_related("author", "author__profile")
         return ReplySerializer(replies, many=True, context=self.context).data
 
     def validate_content(self, value):
