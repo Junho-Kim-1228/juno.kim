@@ -17,7 +17,7 @@ function TodayJuno({ status, isStaff }) {
         <p className="eyebrow">오늘의 김준호</p>
         <h2 id="today-juno-title">요즘은 이렇습니다</h2>
       </div>
-      {isStaff && <a className="today-manage-link" href={`${adminBaseUrl}guestbook/todaystatus/`}>관리</a>}
+      {isStaff && <a className="today-manage-link" href={`${adminBaseUrl}guestbook/todaystatus/`}>수정</a>}
     </div>
     {status ? <>
       <dl className="today-status-list">
