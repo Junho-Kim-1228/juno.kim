@@ -16,9 +16,10 @@ class ProfileInline(admin.StackedInline):
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
     inlines = (ProfileInline,)
-    list_display = ("username", "email", "is_staff", "is_active")
+    list_display = ("username", "email", "email_verified", "is_staff", "is_active")
     search_fields = ("username", "email")
     ordering = ("username",)
+    actions = ("mark_email_verified",)
     add_fieldsets = UserAdmin.add_fieldsets + (
         ("연락처", {"fields": ("email",)}),
     )
@@ -45,6 +46,14 @@ class CustomUserAdmin(UserAdmin):
             changed = [field for field in ("is_active", "is_staff", "is_superuser", "groups", "user_permissions") if field in form.changed_data]
             if changed:
                 write_audit_log(action=AuditLog.Action.USER_PERMISSION_CHANGED, actor=request.user, target_user=obj, request=request, details={"fields": changed})
+
+    @admin.action(description="선택한 계정을 이메일 인증 완료로 처리")
+    def mark_email_verified(self, request, queryset):
+        updated = queryset.filter(email_verified=False).update(
+            email_verified=True,
+            email_verified_at=timezone.now(),
+        )
+        self.message_user(request, f"{updated}개 계정을 이메일 인증 완료로 처리했습니다.")
 
 
 @admin.register(Profile)
