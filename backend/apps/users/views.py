@@ -288,19 +288,6 @@ class MeView(generics.RetrieveUpdateAPIView):
     def get_object(self):
         return self.request.user
 
-    def perform_update(self, serializer):
-        old_email = self.request.user.email
-        user = serializer.save()
-        if user.email != old_email:
-            try:
-                send_verification_email(user)
-            except Exception as exc:
-                logger.warning(
-                    "verification_email_send_failed context=email_change user_id=%s error_type=%s",
-                    user.pk,
-                    type(exc).__name__,
-                )
-
 
 class ProfileView(generics.RetrieveUpdateAPIView):
     permission_classes = (IsActiveAuthenticated,)

@@ -78,25 +78,37 @@ class AuthenticationAPITests(APITestCase):
         response = self.client.get("/api/v1/auth/me/")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    def test_username_cannot_be_changed_after_registration(self):
+    def test_username_and_email_cannot_be_changed_after_registration(self):
         user = User.objects.create_user(
             username="fixed_identity",
             email="fixed-identity@example.com",
             password="StrongTemporary!2026",
         )
+        user.email_verified = True
+        user.save(update_fields=("email_verified",))
         self.client.force_authenticate(user)
 
-        response = self.client.patch(
+        username_response = self.client.patch(
             "/api/v1/auth/me/",
             {"username": "changed_identity"},
             format="json",
             **self.csrf_headers,
         )
+        email_response = self.client.patch(
+            "/api/v1/auth/me/",
+            {"email": "changed-identity@example.com"},
+            format="json",
+            **self.csrf_headers,
+        )
 
         user.refresh_from_db()
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data["username"], ["아이디는 가입 후 변경할 수 없습니다."])
+        self.assertEqual(username_response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(username_response.data["username"], ["아이디는 가입 후 변경할 수 없습니다."])
+        self.assertEqual(email_response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(email_response.data["email"], ["이메일은 가입 후 변경할 수 없습니다."])
         self.assertEqual(user.username, "fixed_identity")
+        self.assertEqual(user.email, "fixed-identity@example.com")
+        self.assertTrue(user.email_verified)
 
     def test_registration_cannot_create_staff_or_superuser(self):
         response = self.client.post(

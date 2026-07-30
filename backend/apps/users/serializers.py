@@ -50,30 +50,18 @@ class UserSerializer(serializers.ModelSerializer):
             "email_verified",
             "profile",
         )
-        read_only_fields = ("id", "username", "is_staff", "email_verified", "profile")
+        read_only_fields = ("id", "username", "email", "is_staff", "email_verified", "profile")
 
     def validate(self, attrs):
-        if self.instance and "username" in self.initial_data:
-            requested_username = self.initial_data.get("username")
-            if requested_username != self.instance.username:
-                raise serializers.ValidationError({"username": "아이디는 가입 후 변경할 수 없습니다."})
-        return attrs
-
-    def validate_email(self, value):
-        normalized = value.strip().lower()
-        queryset = User.objects.annotate(email_normalized=Lower("email")).filter(email_normalized=normalized)
         if self.instance:
-            queryset = queryset.exclude(pk=self.instance.pk)
-        if queryset.exists():
-            raise serializers.ValidationError("An account with this email already exists.")
-        return normalized
-
-    def update(self, instance, validated_data):
-        email_changed = "email" in validated_data and validated_data["email"] != instance.email
-        if email_changed:
-            validated_data["email_verified"] = False
-            validated_data["email_verified_at"] = None
-        return super().update(instance, validated_data)
+            immutable_fields = {
+                "username": "아이디는 가입 후 변경할 수 없습니다.",
+                "email": "이메일은 가입 후 변경할 수 없습니다.",
+            }
+            for field, message in immutable_fields.items():
+                if field in self.initial_data and self.initial_data.get(field) != getattr(self.instance, field):
+                    raise serializers.ValidationError({field: message})
+        return attrs
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
