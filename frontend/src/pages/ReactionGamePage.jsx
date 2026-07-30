@@ -74,7 +74,7 @@ export function ReactionGamePage() {
   }
 
   const instruction = {
-    idle: '시작을 누르고 화면이 초록색으로 바뀌는 순간 눌러 보세요.',
+    idle: '시작을 누르면 1~10초 뒤 화면이 초록색으로 바뀝니다.',
     starting: '게임을 준비하고 있어요.',
     waiting: '아직이에요. 초록색이 될 때까지 기다려 주세요.',
     ready: '지금!',

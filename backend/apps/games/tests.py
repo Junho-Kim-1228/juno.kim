@@ -45,8 +45,8 @@ class ReactionGameAPITests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIn("challenge_id", response.data)
-        self.assertGreaterEqual(response.data["wait_ms"], 800)
-        self.assertLessEqual(response.data["wait_ms"], 1800)
+        self.assertGreaterEqual(response.data["wait_ms"], 1000)
+        self.assertLessEqual(response.data["wait_ms"], 10000)
         self.assertNotIn("ready_at", response.data)
 
     def test_member_keeps_only_their_fastest_score(self):

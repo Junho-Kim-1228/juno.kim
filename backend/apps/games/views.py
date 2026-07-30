@@ -20,8 +20,8 @@ from .serializers import ReactionSubmissionSerializer
 MIN_REACTION_MS = 100
 MAX_REACTION_MS = 10000
 CHALLENGE_TTL = timedelta(seconds=12)
-MIN_READY_DELAY_MS = 800
-MAX_READY_DELAY_MS = 1800
+MIN_READY_DELAY_MS = 1000
+MAX_READY_DELAY_MS = 10000
 
 
 class ReactionChallengeThrottle(AccountRateThrottle):
