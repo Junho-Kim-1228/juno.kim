@@ -264,6 +264,9 @@ main { flex: 1; }
 .stack-form textarea { resize: vertical; }
 .stack-form input:focus, .stack-form textarea:focus, .stack-form select:focus { border-color: var(--accent); }
 .stack-form fieldset { border: 1px solid var(--line); border-radius: 4px; padding: 14px; }
+.password-settings { margin-top: 38px; padding-top: 28px; border-top: 1px solid var(--line); }
+.password-settings h2 { font-size: 1.35rem; font-weight: 600; margin: 0 0 8px; }
+.password-settings > p { color: var(--muted); margin: 0 0 18px; }
 .form-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .rich-text-field { display: grid; gap: 7px; }
 .rich-text-loading { margin: 0; padding: 24px; color: var(--muted); border: 1px solid var(--line); }

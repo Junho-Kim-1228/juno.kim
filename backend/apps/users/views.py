@@ -32,6 +32,7 @@ from .security import (
 )
 from .serializers import (
     LoginSerializer,
+    PasswordChangeSerializer,
     ProfileSerializer,
     RegistrationSerializer,
     UserSerializer,
@@ -151,6 +152,32 @@ class LogoutView(APIView):
                 pass
         response = Response(status=status.HTTP_204_NO_CONTENT)
         delete_refresh_cookie(response)
+        return response
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class PasswordChangeView(APIView):
+    permission_classes = (IsActiveAuthenticated,)
+    throttle_classes = (ScopedRateThrottle,)
+    throttle_scope = "auth"
+
+    def post(self, request):
+        serializer = PasswordChangeSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+
+        request.user.set_password(serializer.validated_data["new_password"])
+        request.user.save(update_fields=("password",))
+
+        # Saving the password revokes all existing refresh tokens through the
+        # user security signal. Issue one new token only for this device.
+        refresh = RefreshToken.for_user(request.user)
+        response = Response(
+            {
+                "access": str(refresh.access_token),
+                "detail": "비밀번호를 변경했습니다.",
+            }
+        )
+        set_refresh_cookie(response, str(refresh))
         return response
 
 

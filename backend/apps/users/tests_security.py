@@ -124,6 +124,44 @@ class EmailVerificationAPITests(APITestCase):
         self.assertEqual(repeated.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
         self.assertEqual(len(mail.outbox), 1)
 
+    def test_password_change_requires_current_password_and_revokes_previous_refresh_tokens(self):
+        member = User.objects.create_user(
+            username="password_member",
+            email="password-member@example.com",
+            password="StrongTemporary!2026",
+        )
+        old_refresh = RefreshToken.for_user(member)
+        old_outstanding = OutstandingToken.objects.get(jti=old_refresh["jti"])
+        self.client.force_authenticate(member)
+
+        incorrect = self.client.post(
+            "/api/v1/auth/change-password/",
+            {
+                "current_password": "not-the-current-password",
+                "new_password": "DifferentStrong!2026",
+                "new_password_confirm": "DifferentStrong!2026",
+            },
+            format="json",
+            **self.headers,
+        )
+        changed = self.client.post(
+            "/api/v1/auth/change-password/",
+            {
+                "current_password": "StrongTemporary!2026",
+                "new_password": "DifferentStrong!2026",
+                "new_password_confirm": "DifferentStrong!2026",
+            },
+            format="json",
+            **self.headers,
+        )
+
+        member.refresh_from_db()
+        self.assertEqual(incorrect.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(changed.status_code, status.HTTP_200_OK)
+        self.assertTrue(member.check_password("DifferentStrong!2026"))
+        self.assertTrue(BlacklistedToken.objects.filter(token=old_outstanding).exists())
+        self.assertIn("access", changed.data)
+
     def test_unverified_user_cannot_write_comment_or_guestbook(self):
         author = User.objects.create_user(username="post_author", email="post-author@example.com", password="StrongTemporary!2026")
         author.email_verified = True

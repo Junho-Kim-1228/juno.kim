@@ -107,3 +107,24 @@ class RegistrationSerializer(serializers.ModelSerializer):
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField(write_only=True, trim_whitespace=False)
+
+
+class PasswordChangeSerializer(serializers.Serializer):
+    current_password = serializers.CharField(write_only=True, trim_whitespace=False)
+    new_password = serializers.CharField(write_only=True, trim_whitespace=False)
+    new_password_confirm = serializers.CharField(write_only=True, trim_whitespace=False)
+
+    def validate_current_password(self, value):
+        user = self.context["request"].user
+        if not user.check_password(value):
+            raise serializers.ValidationError("현재 비밀번호가 올바르지 않습니다.")
+        return value
+
+    def validate(self, attrs):
+        new_password = attrs["new_password"]
+        if new_password != attrs["new_password_confirm"]:
+            raise serializers.ValidationError({"new_password_confirm": "새 비밀번호가 일치하지 않습니다."})
+        if self.context["request"].user.check_password(new_password):
+            raise serializers.ValidationError({"new_password": "현재 비밀번호와 다른 비밀번호를 입력해 주세요."})
+        password_validation.validate_password(new_password, self.context["request"].user)
+        return attrs

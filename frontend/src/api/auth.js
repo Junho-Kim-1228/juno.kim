@@ -30,6 +30,12 @@ export const authApi = {
       setAccessToken(null)
     }
   },
+  async changePassword(payload) {
+    await this.csrf()
+    const { data } = await apiClient.post('/auth/change-password/', payload)
+    setAccessToken(data.access)
+    return data
+  },
   async me() {
     const { data } = await apiClient.get('/auth/me/')
     return data

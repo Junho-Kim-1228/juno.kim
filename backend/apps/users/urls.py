@@ -2,6 +2,7 @@ from django.urls import path
 
 from .views import (
     CsrfTokenView,
+    PasswordChangeView,
     LoginView,
     LogoutView,
     MeView,
@@ -20,6 +21,7 @@ urlpatterns = [
     path("auth/login/", LoginView.as_view(), name="login"),
     path("auth/refresh/", RefreshView.as_view(), name="token-refresh"),
     path("auth/logout/", LogoutView.as_view(), name="logout"),
+    path("auth/change-password/", PasswordChangeView.as_view(), name="change-password"),
     path("auth/verify-email/", VerifyEmailView.as_view(), name="verify-email"),
     path("auth/resend-verification/", ResendVerificationEmailView.as_view(), name="resend-verification"),
     path("reports/impersonation/", ImpersonationReportCreateView.as_view(), name="impersonation-report"),
