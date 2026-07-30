@@ -16,6 +16,7 @@ readonly LOCK_FILE="/run/lock/${APP_NAME}-deploy.lock"
 readonly NGINX_SITE="/etc/nginx/sites-available/${APP_NAME}.conf"
 readonly NGINX_SITE_BACKUP="${NGINX_SITE}.deploy-backup"
 readonly SYSTEMD_DIR="/etc/systemd/system"
+readonly DEPLOY_ENTRYPOINT="/usr/local/sbin/${APP_NAME}-deploy"
 
 if [[ ${EUID} -ne 0 ]]; then
     echo "This deployment entrypoint must run as root." >&2
@@ -56,19 +57,6 @@ if [[ ! -f "${MYSQL_CLIENT_CONFIG}" ]]; then
     exit 1
 fi
 
-admin_url="$(awk -F= '$1 == "ADMIN_URL" {print substr($0, index($0, "=") + 1); exit}' "${ENV_FILE}")"
-admin_path="${admin_url#/}"
-admin_path="${admin_path%/}"
-if [[ "${admin_path}" == "admin" || ! "${admin_path}" =~ ^[a-z0-9][a-z0-9-]{19,79}$ ]]; then
-    echo "ADMIN_URL must be a non-default, 20+ character lowercase path." >&2
-    exit 1
-fi
-
-nginx_rendered_config="$(mktemp)"
-trap 'rm -f "${nginx_rendered_config}"' EXIT
-sed "s|__ADMIN_PATH__|${admin_path}|g" \
-    "${APP_ROOT}/deploy/nginx/juno-kim.conf" > "${nginx_rendered_config}"
-
 previous_revision="$(sudo -u "${APP_USER}" git -C "${APP_ROOT}" rev-parse HEAD)"
 backup_id="$(date -u +%Y%m%dT%H%M%SZ)-${previous_revision:0:12}"
 backup_dir="${BACKUP_ROOT}/${backup_id}"
@@ -93,6 +81,21 @@ echo "Backup created: ${backup_dir}"
 echo "Updating main from origin (previous revision: ${previous_revision})"
 sudo -u "${APP_USER}" git -C "${APP_ROOT}" fetch origin main
 sudo -u "${APP_USER}" git -C "${APP_ROOT}" merge --ff-only origin/main
+
+# Render deployment artifacts only after updating the worktree. Rendering them
+# before the merge applies the previous revision's Nginx configuration.
+admin_url="$(awk -F= '$1 == "ADMIN_URL" {print substr($0, index($0, "=") + 1); exit}' "${ENV_FILE}")"
+admin_path="${admin_url#/}"
+admin_path="${admin_path%/}"
+if [[ "${admin_path}" == "admin" || ! "${admin_path}" =~ ^[a-z0-9][a-z0-9-]{19,79}$ ]]; then
+    echo "ADMIN_URL must be a non-default, 20+ character lowercase path." >&2
+    exit 1
+fi
+
+nginx_rendered_config="$(mktemp)"
+trap 'rm -f "${nginx_rendered_config}"' EXIT
+sed "s|__ADMIN_PATH__|${admin_path}|g" \
+    "${APP_ROOT}/deploy/nginx/juno-kim.conf" > "${nginx_rendered_config}"
 
 if [[ ! -x "${APP_ROOT}/.venv/bin/python" ]]; then
     sudo -u "${APP_USER}" python3 -m venv "${APP_ROOT}/.venv"
@@ -171,6 +174,12 @@ systemctl is-active --quiet "${APP_SERVICE}"
 systemctl is-active --quiet juno-kim-monitor.timer
 systemctl is-active --quiet juno-kim-backup.timer
 systemctl is-active --quiet "${PROTECTED_SERVICE}"
+
+# Refresh the root-owned entrypoint only after a successful deployment so future
+# runs use the deployment logic from the current revision.
+install -o root -g root -m 0755 \
+    "${APP_ROOT}/deploy/scripts/ci-deploy.sh" \
+    "${DEPLOY_ENTRYPOINT}"
 
 echo "Deployment complete: $(sudo -u "${APP_USER}" git -C "${APP_ROOT}" rev-parse --short HEAD)"
 echo "Protected service remains active: ${PROTECTED_SERVICE}"
