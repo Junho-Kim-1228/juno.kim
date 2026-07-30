@@ -39,4 +39,5 @@ jobs:
             -o IdentitiesOnly=yes \
             -o StrictHostKeyChecking=yes \
             -o UserKnownHostsFile="${HOME}/.ssh/known_hosts" \
-            juno-deploy@43.200.172.77
+            juno-deploy@43.200.172.77 \
+            sudo -n /usr/local/sbin/juno-kim-deploy
