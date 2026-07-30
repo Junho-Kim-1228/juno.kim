@@ -324,13 +324,12 @@ main { flex: 1; }
 .guestbook-section .state-message { width: 100%; margin: 18px 0; }
 
 .game-list { border-top: 1px solid var(--line); }
-.game-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 18px; align-items: center; padding: 22px 6px; border-bottom: 1px solid var(--line); background: var(--surface); }
+.game-card { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 18px; align-items: center; padding: 22px 6px; border-bottom: 1px solid var(--line); background: var(--surface); }
 .game-card:hover { background: #f6f3ec; }
 .game-card-mark { color: var(--accent); font-size: 1.3rem; }
 .game-card strong, .game-card small { display: block; }
 .game-card strong { font-size: 1.12rem; font-weight: 600; }
 .game-card small { margin-top: 2px; color: var(--muted); font-size: .86rem; }
-.game-card-arrow { color: var(--accent); font-size: 1.2rem; }
 .reaction-layout { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(280px, .9fr); gap: 46px; margin-top: 26px; }
 .reaction-game, .reaction-ranking { padding-top: 24px; border-top: 1px solid var(--line); }
 .reaction-game h2, .reaction-ranking h2 { margin: 0; font-size: 1.35rem; font-weight: 600; }
