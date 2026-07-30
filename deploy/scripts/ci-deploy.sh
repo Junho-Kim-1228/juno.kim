@@ -56,6 +56,19 @@ if [[ ! -f "${MYSQL_CLIENT_CONFIG}" ]]; then
     exit 1
 fi
 
+admin_url="$(awk -F= '$1 == "ADMIN_URL" {print substr($0, index($0, "=") + 1); exit}' "${ENV_FILE}")"
+admin_path="${admin_url#/}"
+admin_path="${admin_path%/}"
+if [[ "${admin_path}" == "admin" || ! "${admin_path}" =~ ^[a-z0-9][a-z0-9-]{19,79}$ ]]; then
+    echo "ADMIN_URL must be a non-default, 20+ character lowercase path." >&2
+    exit 1
+fi
+
+nginx_rendered_config="$(mktemp)"
+trap 'rm -f "${nginx_rendered_config}"' EXIT
+sed "s|__ADMIN_PATH__|${admin_path}|g" \
+    "${APP_ROOT}/deploy/nginx/juno-kim.conf" > "${nginx_rendered_config}"
+
 previous_revision="$(sudo -u "${APP_USER}" git -C "${APP_ROOT}" rev-parse HEAD)"
 backup_id="$(date -u +%Y%m%dT%H%M%SZ)-${previous_revision:0:12}"
 backup_dir="${BACKUP_ROOT}/${backup_id}"
@@ -101,7 +114,7 @@ sudo -u "${APP_USER}" env HOME="${APP_ROOT}" npm --prefix "${APP_ROOT}/frontend"
 
 cp --preserve=mode,ownership,timestamps "${NGINX_SITE}" "${NGINX_SITE_BACKUP}"
 install -o root -g root -m 0644 \
-    "${APP_ROOT}/deploy/nginx/juno-kim.conf" \
+    "${nginx_rendered_config}" \
     "${NGINX_SITE}"
 if ! nginx -t; then
     echo "Nginx configuration validation failed; restoring previous site configuration." >&2

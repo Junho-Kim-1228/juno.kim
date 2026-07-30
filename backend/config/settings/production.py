@@ -1,3 +1,5 @@
+import re
+
 from django.core.exceptions import ImproperlyConfigured
 
 from .base import *  # noqa: F403
@@ -21,8 +23,10 @@ if set(CORS_ALLOWED_ORIGINS) != {EXPECTED_ORIGIN}:  # noqa: F405
     raise ImproperlyConfigured("운영 CORS는 https://juno.kim만 허용해야 합니다.")
 if set(CSRF_TRUSTED_ORIGINS) != {EXPECTED_ORIGIN}:
     raise ImproperlyConfigured("운영 CSRF 신뢰 출처는 https://juno.kim만 허용해야 합니다.")
-if ADMIN_URL != "admin/":  # noqa: F405
-    raise ImproperlyConfigured("ADMIN_URL은 Nginx 프록시 경로인 admin/과 일치해야 합니다.")
+if ADMIN_URL == "admin/" or not re.fullmatch(r"[a-z0-9][a-z0-9-]{19,79}/", ADMIN_URL):  # noqa: F405
+    raise ImproperlyConfigured(
+        "운영 ADMIN_URL은 admin/이 아닌 20자 이상의 영문 소문자·숫자·하이픈 경로여야 합니다."
+    )
 
 SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=True)  # noqa: F405
 SESSION_COOKIE_SECURE = True
