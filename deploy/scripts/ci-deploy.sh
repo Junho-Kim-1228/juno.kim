@@ -22,7 +22,7 @@ if [[ ${EUID} -ne 0 ]]; then
     exit 1
 fi
 
-for command_name in flock git python3 npm systemctl nginx curl mysqldump gzip tar; do
+for command_name in aws flock git python3 npm systemctl nginx curl mysqldump gzip tar; do
     command -v "${command_name}" >/dev/null 2>&1 || {
         echo "Missing required command: ${command_name}" >&2
         exit 1
@@ -135,8 +135,18 @@ install -o root -g root -m 0644 \
 install -o root -g root -m 0644 \
     "${APP_ROOT}/deploy/systemd/juno-kim-monitor.timer" \
     "${SYSTEMD_DIR}/juno-kim-monitor.timer"
+install -o root -g root -m 0755 \
+    "${APP_ROOT}/deploy/scripts/backup-to-s3.sh" \
+    "/usr/local/sbin/juno-kim-backup-to-s3"
+install -o root -g root -m 0644 \
+    "${APP_ROOT}/deploy/systemd/juno-kim-backup.service" \
+    "${SYSTEMD_DIR}/juno-kim-backup.service"
+install -o root -g root -m 0644 \
+    "${APP_ROOT}/deploy/systemd/juno-kim-backup.timer" \
+    "${SYSTEMD_DIR}/juno-kim-backup.timer"
 systemctl daemon-reload
 systemctl enable --now juno-kim-monitor.timer
+systemctl enable --now juno-kim-backup.timer
 
 systemctl restart "${APP_SERVICE}"
 systemctl reload nginx
@@ -159,6 +169,7 @@ done
 
 systemctl is-active --quiet "${APP_SERVICE}"
 systemctl is-active --quiet juno-kim-monitor.timer
+systemctl is-active --quiet juno-kim-backup.timer
 systemctl is-active --quiet "${PROTECTED_SERVICE}"
 
 echo "Deployment complete: $(sudo -u "${APP_USER}" git -C "${APP_ROOT}" rev-parse --short HEAD)"

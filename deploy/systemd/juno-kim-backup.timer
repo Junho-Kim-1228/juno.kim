@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the juno.kim off-instance backup every day
+
+[Timer]
+OnCalendar=*-*-* 03:30:00 Asia/Seoul
+RandomizedDelaySec=5min
+Persistent=true
+Unit=juno-kim-backup.service
+
+[Install]
+WantedBy=timers.target
