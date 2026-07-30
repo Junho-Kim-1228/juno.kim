@@ -14,6 +14,7 @@ urlpatterns = [
     path("api/v1/", include("apps.posts.urls")),
     path("api/v1/", include("apps.comments.urls")),
     path("api/v1/", include("apps.guestbook.urls")),
+    path("api/v1/", include("apps.games.urls")),
 ]
 
 if settings.DEBUG:

@@ -320,6 +320,35 @@ main { flex: 1; }
 .state-message.error { color: var(--danger); }
 .guestbook-section .state-message { width: 100%; margin: 18px 0; }
 
+.game-list { border-top: 1px solid var(--line); }
+.game-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 18px; align-items: center; padding: 22px 6px; border-bottom: 1px solid var(--line); background: var(--surface); }
+.game-card:hover { background: #f6f3ec; }
+.game-card-mark { color: var(--accent); font-size: 1.3rem; }
+.game-card strong, .game-card small { display: block; }
+.game-card strong { font-size: 1.12rem; font-weight: 600; }
+.game-card small { margin-top: 2px; color: var(--muted); font-size: .86rem; }
+.game-card-arrow { color: var(--accent); font-size: 1.2rem; }
+.reaction-layout { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(280px, .9fr); gap: 46px; margin-top: 26px; }
+.reaction-game, .reaction-ranking { padding-top: 24px; border-top: 1px solid var(--line); }
+.reaction-game h2, .reaction-ranking h2 { margin: 0; font-size: 1.35rem; font-weight: 600; }
+.reaction-pad { width: 100%; min-height: 250px; margin: 22px 0 13px; color: var(--muted); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; font-size: 1.8rem; font-weight: 650; transition: background-color .1s ease, color .1s ease; }
+.reaction-pad.waiting { color: #8a7554; background: #f3e9d8; }
+.reaction-pad.ready { color: #fff; background: var(--accent); }
+.reaction-pad.too-soon { color: #fff; background: #b4534b; }
+.reaction-instruction, .game-auth-note { min-height: 28px; margin: 0 0 16px; color: var(--muted); }
+.game-auth-note a { color: var(--accent); }
+.reaction-result { margin: 0 0 16px; color: var(--accent); }
+.reaction-ranking > div { margin-bottom: 14px; }
+.reaction-ranking-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.reaction-ranking-list li { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 11px 4px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: .88rem; }
+.reaction-ranking-list li.mine { color: var(--accent); background: #f2f7f4; }
+.reaction-ranking-list li strong { color: #302e2a; font-weight: 600; }
+.reaction-ranking-list li small { font-size: .78rem; }
+.reaction-ranking-list time { font-variant-numeric: tabular-nums; }
+.rank-number { color: var(--accent); font-weight: 700; }
+.my-rank { margin: 16px 0 0; color: var(--muted); }
+.my-rank strong { color: var(--accent); }
+
 @media (max-width: 820px) {
   .site-header { grid-template-columns: 1fr auto; padding: 12px 0; }
   .site-header nav { grid-column: 1 / -1; grid-row: 2; justify-content: flex-start; }
@@ -329,6 +358,7 @@ main { flex: 1; }
   .post-card .card-meta, .post-card h3, .post-card > p { grid-column: 1; grid-row: auto; }
   .post-card .card-meta { display: flex; }
   .about-section { grid-template-columns: 1fr; gap: 22px; }
+  .reaction-layout { grid-template-columns: 1fr; gap: 34px; }
   .form-row { grid-template-columns: 1fr; }
   .today-status-list { grid-template-columns: 1fr; }
   .today-status-list div { border-right: 0; border-bottom: 1px solid var(--line); }

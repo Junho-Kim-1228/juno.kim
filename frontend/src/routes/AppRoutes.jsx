@@ -5,6 +5,7 @@ import { HomePage } from '../pages/HomePage'
 import { DeveloperPage } from '../pages/DeveloperPage'
 import { DraftsPage } from '../pages/DraftsPage'
 import { GuestbookPage } from '../pages/GuestbookPage'
+import { GamesPage } from '../pages/GamesPage'
 import { LoginPage } from '../pages/LoginPage'
 import { NotFoundPage } from '../pages/NotFoundPage'
 import { PostDetailPage } from '../pages/PostDetailPage'
@@ -15,6 +16,7 @@ import { ProjectDetailPage } from '../pages/ProjectDetailPage'
 import { ProjectEditorPage } from '../pages/ProjectEditorPage'
 import { ProjectsPage } from '../pages/ProjectsPage'
 import { RegisterPage } from '../pages/RegisterPage'
+import { ReactionGamePage } from '../pages/ReactionGamePage'
 import { VerifyEmailPage } from '../pages/VerifyEmailPage'
 import { ProtectedRoute } from './ProtectedRoute'
 
@@ -22,6 +24,8 @@ export function AppRoutes() {
   return <MainLayout><Switch>
     <Route exact path="/" component={HomePage} />
     <Route exact path="/guestbook" component={GuestbookPage} />
+    <Route exact path="/games/reaction" component={ReactionGamePage} />
+    <Route exact path="/games" component={GamesPage} />
     <Route exact path="/developer" component={DeveloperPage} />
     <Redirect exact from="/records" to="/developer" />
     <Route exact path="/login" component={LoginPage} />

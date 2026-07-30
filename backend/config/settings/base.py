@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "apps.posts.apps.PostsConfig",
     "apps.comments.apps.CommentsConfig",
     "apps.guestbook.apps.GuestbookConfig",
+    "apps.games.apps.GamesConfig",
 ]
 
 MIDDLEWARE = [
@@ -140,6 +141,9 @@ REST_FRAMEWORK = {
         "impersonation_report_ip": "20/hour",
         "content_image_upload": "20/hour",
         "content_image_user_hour": "5/hour",
+        "reaction_challenge": "10/minute",
+        "reaction_submission": "10/minute",
+        "reaction_game_ip": "20/minute",
     },
 }
 
