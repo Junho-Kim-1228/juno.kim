@@ -40,6 +40,15 @@ class ReactionGameAPITests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+    def test_challenge_uses_a_short_relative_wait_time(self):
+        response = self.client.post(reverse("reaction-challenge"), format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIn("challenge_id", response.data)
+        self.assertGreaterEqual(response.data["wait_ms"], 800)
+        self.assertLessEqual(response.data["wait_ms"], 1800)
+        self.assertNotIn("ready_at", response.data)
+
     def test_member_keeps_only_their_fastest_score(self):
         first = self.create_ready_challenge(240)
         self.assertEqual(first.status_code, status.HTTP_200_OK)

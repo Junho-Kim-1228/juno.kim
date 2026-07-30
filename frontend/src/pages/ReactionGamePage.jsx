@@ -45,7 +45,7 @@ export function ReactionGamePage() {
       const challenge = await gamesApi.startReactionChallenge()
       setChallengeId(challenge.challenge_id)
       setGameState('waiting')
-      timerRef.current = window.setTimeout(() => setGameState('ready'), Math.max(0, new Date(challenge.ready_at).getTime() - Date.now()))
+      timerRef.current = window.setTimeout(() => setGameState('ready'), challenge.wait_ms)
     } catch (requestError) {
       setGameState('idle')
       setError(requestError)

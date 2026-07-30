@@ -20,6 +20,8 @@ from .serializers import ReactionSubmissionSerializer
 MIN_REACTION_MS = 100
 MAX_REACTION_MS = 10000
 CHALLENGE_TTL = timedelta(seconds=12)
+MIN_READY_DELAY_MS = 800
+MAX_READY_DELAY_MS = 1800
 
 
 class ReactionChallengeThrottle(AccountRateThrottle):
@@ -86,14 +88,15 @@ class ReactionChallengeView(APIView):
 
     def post(self, request):
         now = timezone.now()
-        ready_at = now + timedelta(milliseconds=random.SystemRandom().randint(1500, 3500))
+        wait_ms = random.SystemRandom().randint(MIN_READY_DELAY_MS, MAX_READY_DELAY_MS)
+        ready_at = now + timedelta(milliseconds=wait_ms)
         challenge = ReactionChallenge.objects.create(
             user=request.user,
             ready_at=ready_at,
             expires_at=ready_at + CHALLENGE_TTL,
         )
         return Response(
-            {"challenge_id": challenge.pk, "ready_at": challenge.ready_at},
+            {"challenge_id": challenge.pk, "wait_ms": wait_ms},
             status=status.HTTP_201_CREATED,
         )
 
