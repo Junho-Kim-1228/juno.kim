@@ -206,13 +206,14 @@ main { flex: 1; }
 .guestbook-auth-note { margin: 0; padding: 18px 4px; color: var(--muted); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .guestbook-auth-note a { color: var(--accent); }
 .guestbook-list { list-style: none; margin: 28px 0 0; padding: 0; border-top: 1px solid var(--line); }
-.guestbook-list li { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 28px; padding: 18px 4px; border-bottom: 1px solid var(--line); }
-.guestbook-head { display: grid; align-content: start; gap: 2px; }
-.guestbook-head strong { font-weight: 580; }
-.guestbook-head time { color: var(--muted); font-size: .78rem; }
+.guestbook-list li { padding: 20px 4px; border-bottom: 1px solid var(--line); }
+.guestbook-head { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+.guestbook-head strong { min-width: 0; font-weight: 580; overflow-wrap: anywhere; }
+.guestbook-head time { flex: 0 0 auto; margin-left: auto; color: var(--muted); font-size: .78rem; }
+.guestbook-entry-body { margin-top: 10px; }
 .guestbook-list p { margin: 0; color: var(--muted); white-space: pre-wrap; overflow-wrap: anywhere; }
 .guestbook-state { color: var(--muted); }
-.guestbook-entry-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px; }
+.guestbook-entry-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 10px; }
 .guestbook-reply { margin-top: 14px; padding: 13px 15px; border-left: 2px solid var(--accent); background: var(--surface-2); }
 .guestbook-reply-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 5px; font-size: .78rem; }
 .guestbook-reply-head strong { font-weight: 580; }
@@ -379,8 +380,7 @@ main { flex: 1; }
   .project-card { padding: 18px 2px; }
   .about-section { margin-top: 36px; padding: 34px 0; }
   .guestbook-form { grid-template-columns: 1fr; }
-  .guestbook-list li { grid-template-columns: 1fr; gap: 8px; }
-  .guestbook-head { display: flex; justify-content: space-between; gap: 12px; }
+  .guestbook-head { align-items: flex-start; gap: 12px; }
   .auth-panel, .form-page { width: calc(100% - 24px); margin: 30px auto; padding: 22px; }
   .site-footer { flex-direction: column; gap: 5px; }
 }
