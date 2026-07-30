@@ -3,7 +3,7 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_protect
 from rest_framework import generics, permissions
 from rest_framework.response import Response
-from apps.permissions import IsVerifiedUserOrReadOnly
+from apps.permissions import IsStaffOrReadOnly, IsVerifiedUserOrReadOnly
 from apps.users.security import GuestbookAccountThrottle, GuestbookIPThrottle
 
 from .models import GuestbookEntry, TodayStatus
@@ -37,7 +37,7 @@ class GuestbookListCreateView(generics.ListCreateAPIView):
 
 @method_decorator(csrf_protect, name="dispatch")
 class GuestbookReplyView(generics.UpdateAPIView):
-    permission_classes = (permissions.IsAdminUser,)
+    permission_classes = (IsStaffOrReadOnly,)
     serializer_class = GuestbookReplyUpdateSerializer
     http_method_names = ("patch", "options")
     queryset = GuestbookEntry.objects.select_related(

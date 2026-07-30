@@ -19,7 +19,7 @@ class CustomUserAdmin(UserAdmin):
     list_display = ("username", "email", "email_verified", "is_staff", "is_active")
     search_fields = ("username", "email")
     ordering = ("username",)
-    actions = ("mark_email_verified",)
+    actions = ("mark_email_verified", "ban_selected_members", "unban_selected_members")
     add_fieldsets = UserAdmin.add_fieldsets + (
         ("연락처", {"fields": ("email",)}),
     )
@@ -54,6 +54,26 @@ class CustomUserAdmin(UserAdmin):
             email_verified_at=timezone.now(),
         )
         self.message_user(request, f"{updated}개 계정을 이메일 인증 완료로 처리했습니다.")
+
+    def _eligible_members(self, queryset):
+        """Never bulk-block an administrator from the member moderation screen."""
+        return queryset.filter(is_staff=False, is_superuser=False)
+
+    @admin.action(description="선택한 일반 회원 차단 (로그인·작성 금지)")
+    def ban_selected_members(self, request, queryset):
+        members = list(self._eligible_members(queryset).filter(is_active=True))
+        for member in members:
+            member.is_active = False
+            member.save(update_fields=("is_active",))
+        self.message_user(request, f"{len(members)}개 일반 회원을 차단했습니다.")
+
+    @admin.action(description="선택한 일반 회원 차단 해제")
+    def unban_selected_members(self, request, queryset):
+        members = list(self._eligible_members(queryset).filter(is_active=False))
+        for member in members:
+            member.is_active = True
+            member.save(update_fields=("is_active",))
+        self.message_user(request, f"{len(members)}개 일반 회원의 차단을 해제했습니다.")
 
 
 @admin.register(Profile)

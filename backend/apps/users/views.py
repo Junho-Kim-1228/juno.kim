@@ -6,7 +6,7 @@ from django.middleware.csrf import get_token
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from rest_framework import generics, status
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
@@ -17,7 +17,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .cookies import delete_refresh_cookie, set_refresh_cookie
 from .email import send_verification_email
 from .models import EmailVerificationToken, ImpersonationReport
-from apps.permissions import IsVerifiedUserOrReadOnly
+from apps.permissions import IsActiveAuthenticated, IsVerifiedUserOrReadOnly
 from .security import (
     ImpersonationReportAccountThrottle,
     ImpersonationReportIPThrottle,
@@ -175,7 +175,7 @@ class VerifyEmailView(APIView):
 
 @method_decorator(csrf_protect, name="dispatch")
 class ResendVerificationEmailView(APIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsActiveAuthenticated,)
     throttle_classes = (
         VerificationResendAccountBurstThrottle,
         VerificationResendAccountThrottle,
@@ -255,7 +255,7 @@ class ImpersonationReportCreateView(APIView):
 
 
 class MeView(generics.RetrieveUpdateAPIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsActiveAuthenticated,)
     serializer_class = UserSerializer
 
     def get_object(self):
@@ -276,7 +276,7 @@ class MeView(generics.RetrieveUpdateAPIView):
 
 
 class ProfileView(generics.RetrieveUpdateAPIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsActiveAuthenticated,)
     serializer_class = ProfileSerializer
 
     def get_object(self):

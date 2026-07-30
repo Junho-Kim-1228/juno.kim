@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from django.contrib import admin
 from django.core.cache import cache
 from django.core import mail
@@ -131,6 +133,24 @@ class EmailVerificationAPITests(APITestCase):
         self.client.force_authenticate(member)
         comment = self.client.post("/api/v1/comments/", {"post_slug": post.slug, "content": "blocked"}, format="json")
         guestbook = self.client.post("/api/v1/guestbook/", {"message": "blocked"}, format="json", **self.headers)
+        self.assertEqual(comment.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(guestbook.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_deactivated_verified_user_cannot_write_comment_or_guestbook(self):
+        author = User.objects.create_user(username="active_author", email="active-author@example.com", password="StrongTemporary!2026")
+        author.email_verified = True
+        author.save(update_fields=("email_verified",))
+        post = Post.objects.create(author=author, title="Published", excerpt="excerpt", content="content", status=Post.Status.PUBLISHED)
+        member = User.objects.create_user(username="banned_member", email="banned-member@example.com", password="StrongTemporary!2026")
+        member.email_verified = True
+        member.save(update_fields=("email_verified",))
+        member.is_active = False
+        member.save(update_fields=("is_active",))
+
+        self.client.force_authenticate(member)
+        comment = self.client.post("/api/v1/comments/", {"post_slug": post.slug, "content": "blocked"}, format="json")
+        guestbook = self.client.post("/api/v1/guestbook/", {"message": "blocked"}, format="json", **self.headers)
+
         self.assertEqual(comment.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(guestbook.status_code, status.HTTP_403_FORBIDDEN)
 
@@ -286,6 +306,23 @@ class SecurityAdminAndTokenTests(TestCase):
         self.member.is_staff = True
         self.member.save(update_fields=("is_staff",))
         self.assertTrue(BlacklistedToken.objects.filter(token=outstanding).exists())
+
+    def test_superuser_can_ban_and_unban_a_regular_member(self):
+        refresh = RefreshToken.for_user(self.member)
+        outstanding = OutstandingToken.objects.get(jti=refresh["jti"])
+        request = type("Request", (), {"user": self.superuser})()
+        user_admin = admin.site._registry[User]
+
+        with patch.object(user_admin, "message_user"):
+            user_admin.ban_selected_members(request, User.objects.filter(pk=self.member.pk))
+        self.member.refresh_from_db()
+        self.assertFalse(self.member.is_active)
+        self.assertTrue(BlacklistedToken.objects.filter(token=outstanding).exists())
+
+        with patch.object(user_admin, "message_user"):
+            user_admin.unban_selected_members(request, User.objects.filter(pk=self.member.pk))
+        self.member.refresh_from_db()
+        self.assertTrue(self.member.is_active)
 
     def test_unverified_staff_is_sent_to_mfa_enrollment_before_admin(self):
         client = self.client
