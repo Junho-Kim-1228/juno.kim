@@ -29,3 +29,18 @@ class ReactionBestScore(models.Model):
     class Meta:
         ordering = ("reaction_ms", "achieved_at", "pk")
 
+
+class AimBestScore(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="aim_best_score")
+    score_ms = models.PositiveIntegerField(validators=[MinValueValidator(500)])
+    achieved_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("score_ms", "achieved_at", "pk")
+
+
+class AimChallenge(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="aim_challenges")
+    expires_at = models.DateTimeField()
+    used_at = models.DateTimeField(null=True, blank=True)

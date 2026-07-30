@@ -6,6 +6,7 @@ import { DeveloperPage } from '../pages/DeveloperPage'
 import { DraftsPage } from '../pages/DraftsPage'
 import { GuestbookPage } from '../pages/GuestbookPage'
 import { GamesPage } from '../pages/GamesPage'
+import { AimGamePage } from '../pages/AimGamePage'
 import { LoginPage } from '../pages/LoginPage'
 import { NotFoundPage } from '../pages/NotFoundPage'
 import { PostDetailPage } from '../pages/PostDetailPage'
@@ -25,6 +26,7 @@ export function AppRoutes() {
     <Route exact path="/" component={HomePage} />
     <Route exact path="/guestbook" component={GuestbookPage} />
     <Route exact path="/games/reaction" component={ReactionGamePage} />
+    <Route exact path="/games/aim" component={AimGamePage} />
     <Route exact path="/games" component={GamesPage} />
     <Route exact path="/developer" component={DeveloperPage} />
     <Redirect exact from="/records" to="/developer" />
