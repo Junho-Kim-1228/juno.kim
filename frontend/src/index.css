@@ -210,10 +210,12 @@ main { flex: 1; }
 .guestbook-head { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
 .guestbook-head strong { min-width: 0; font-weight: 580; overflow-wrap: anywhere; }
 .guestbook-head time { flex: 0 0 auto; margin-left: auto; color: var(--muted); font-size: .78rem; }
-.guestbook-entry-body { margin-top: 10px; }
+.guestbook-entry-body { margin-top: 8px; }
 .guestbook-list p { margin: 0; color: var(--muted); white-space: pre-wrap; overflow-wrap: anywhere; }
 .guestbook-state { color: var(--muted); }
-.guestbook-entry-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+.guestbook-entry-actions { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 10px; margin-top: 2px; }
+.guestbook-entry-actions .text-button { padding-left: 0; padding-right: 0; }
+.guestbook-entry-actions .report-button { margin-top: 0; }
 .guestbook-reply { margin-top: 14px; padding: 13px 15px; border-left: 2px solid var(--accent); background: var(--surface-2); }
 .guestbook-reply-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 5px; font-size: .78rem; }
 .guestbook-reply-head strong { font-weight: 580; }
