@@ -50,7 +50,14 @@ class UserSerializer(serializers.ModelSerializer):
             "email_verified",
             "profile",
         )
-        read_only_fields = ("id", "is_staff", "email_verified", "profile")
+        read_only_fields = ("id", "username", "is_staff", "email_verified", "profile")
+
+    def validate(self, attrs):
+        if self.instance and "username" in self.initial_data:
+            requested_username = self.initial_data.get("username")
+            if requested_username != self.instance.username:
+                raise serializers.ValidationError({"username": "아이디는 가입 후 변경할 수 없습니다."})
+        return attrs
 
     def validate_email(self, value):
         normalized = value.strip().lower()
@@ -60,12 +67,6 @@ class UserSerializer(serializers.ModelSerializer):
         if queryset.exists():
             raise serializers.ValidationError("An account with this email already exists.")
         return normalized
-
-    def validate_username(self, value):
-        try:
-            return validate_username(value)
-        except Exception as error:
-            raise serializers.ValidationError(error.messages[0]) from error
 
     def update(self, instance, validated_data):
         email_changed = "email" in validated_data and validated_data["email"] != instance.email

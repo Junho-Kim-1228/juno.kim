@@ -78,6 +78,26 @@ class AuthenticationAPITests(APITestCase):
         response = self.client.get("/api/v1/auth/me/")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_username_cannot_be_changed_after_registration(self):
+        user = User.objects.create_user(
+            username="fixed_identity",
+            email="fixed-identity@example.com",
+            password="StrongTemporary!2026",
+        )
+        self.client.force_authenticate(user)
+
+        response = self.client.patch(
+            "/api/v1/auth/me/",
+            {"username": "changed_identity"},
+            format="json",
+            **self.csrf_headers,
+        )
+
+        user.refresh_from_db()
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["username"], ["아이디는 가입 후 변경할 수 없습니다."])
+        self.assertEqual(user.username, "fixed_identity")
+
     def test_registration_cannot_create_staff_or_superuser(self):
         response = self.client.post(
             "/api/v1/auth/register/",
