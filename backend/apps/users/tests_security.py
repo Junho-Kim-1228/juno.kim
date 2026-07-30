@@ -1,3 +1,4 @@
+from datetime import timedelta
 from unittest.mock import patch
 
 from django.contrib import admin
@@ -17,7 +18,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from apps.guestbook.models import GuestbookEntry
 from apps.posts.models import Post
 
-from .models import EmailVerificationToken, ImpersonationReport, User
+from .models import AuditLog, EmailVerificationToken, ImpersonationReport, User
 
 
 @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
@@ -376,6 +377,32 @@ class SecurityAdminAndTokenTests(TestCase):
         self.assertIsNone(self.member.last_rate_limit_strike_at)
         self.assertIsNone(self.member.write_blocked_until)
         self.assertIsNone(self.member.auto_blocked_at)
+
+    def test_superuser_can_apply_manual_one_hour_and_one_day_write_blocks(self):
+        request = type("Request", (), {"user": self.superuser, "META": {}})()
+        user_admin = admin.site._registry[User]
+
+        with patch.object(user_admin, "message_user"):
+            user_admin.block_selected_members_for_one_hour(request, User.objects.filter(pk=self.member.pk))
+        self.member.refresh_from_db()
+        one_hour_block = self.member.write_blocked_until
+        self.assertTrue(self.member.is_active)
+        self.assertGreater(one_hour_block, timezone.now() + timedelta(minutes=59))
+        self.assertLess(one_hour_block, timezone.now() + timedelta(hours=1, minutes=1))
+        self.assertTrue(
+            AuditLog.objects.filter(
+                target_user=self.member,
+                action=AuditLog.Action.USER_PERMISSION_CHANGED,
+                details__moderation="manual_write_block",
+                details__duration_hours=1,
+            ).exists()
+        )
+
+        with patch.object(user_admin, "message_user"):
+            user_admin.block_selected_members_for_one_day(request, User.objects.filter(pk=self.member.pk))
+        self.member.refresh_from_db()
+        self.assertGreater(self.member.write_blocked_until, timezone.now() + timedelta(hours=23, minutes=59))
+        self.assertLess(self.member.write_blocked_until, timezone.now() + timedelta(hours=24, minutes=1))
 
     def test_unverified_staff_is_sent_to_mfa_enrollment_before_admin(self):
         client = self.client

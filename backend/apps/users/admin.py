@@ -1,4 +1,5 @@
 import json
+from datetime import timedelta
 
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
@@ -29,6 +30,8 @@ class CustomUserAdmin(UserAdmin):
     ordering = ("username",)
     actions = (
         "mark_email_verified",
+        "block_selected_members_for_one_hour",
+        "block_selected_members_for_one_day",
         "ban_selected_members",
         "unban_selected_members",
         "clear_automatic_write_blocks",
@@ -93,7 +96,44 @@ class CustomUserAdmin(UserAdmin):
         """Never bulk-block an administrator from the member moderation screen."""
         return queryset.filter(is_staff=False, is_superuser=False)
 
-    @admin.action(description="선택한 일반 회원 차단 (로그인·작성 금지)")
+    def _apply_manual_write_block(self, request, queryset, *, duration, label):
+        """Block only content writes while keeping a regular member able to sign in."""
+        blocked_until = timezone.now() + duration
+        members = list(self._eligible_members(queryset).filter(is_active=True))
+        for member in members:
+            member.write_blocked_until = blocked_until
+            member.save(update_fields=("write_blocked_until",))
+            write_audit_log(
+                action=AuditLog.Action.USER_PERMISSION_CHANGED,
+                actor=request.user,
+                target_user=member,
+                request=request,
+                details={
+                    "moderation": "manual_write_block",
+                    "duration_hours": int(duration.total_seconds() // 3600),
+                },
+            )
+        self.message_user(request, f"{len(members)}개 일반 회원을 {label} 동안 작성 차단했습니다.")
+
+    @admin.action(description="선택한 일반 회원 1시간 작성 차단")
+    def block_selected_members_for_one_hour(self, request, queryset):
+        self._apply_manual_write_block(
+            request,
+            queryset,
+            duration=timedelta(hours=1),
+            label="1시간",
+        )
+
+    @admin.action(description="선택한 일반 회원 24시간 작성 차단")
+    def block_selected_members_for_one_day(self, request, queryset):
+        self._apply_manual_write_block(
+            request,
+            queryset,
+            duration=timedelta(hours=24),
+            label="24시간",
+        )
+
+    @admin.action(description="선택한 일반 회원 차단 해제 전까지 (로그인·작성 금지)")
     def ban_selected_members(self, request, queryset):
         members = list(self._eligible_members(queryset).filter(is_active=True))
         for member in members:
