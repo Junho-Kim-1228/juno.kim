@@ -110,7 +110,8 @@ sudo -u "${APP_USER}" env DJANGO_SETTINGS_MODULE=config.settings.production DJAN
     "${APP_ROOT}/.venv/bin/python" "${APP_ROOT}/backend/manage.py" check --deploy
 
 sudo -u "${APP_USER}" env HOME="${APP_ROOT}" npm --prefix "${APP_ROOT}/frontend" ci
-sudo -u "${APP_USER}" env HOME="${APP_ROOT}" npm --prefix "${APP_ROOT}/frontend" run build
+sudo -u "${APP_USER}" env HOME="${APP_ROOT}" VITE_ADMIN_URL="/${admin_path}/" \
+    npm --prefix "${APP_ROOT}/frontend" run build
 
 cp --preserve=mode,ownership,timestamps "${NGINX_SITE}" "${NGINX_SITE_BACKUP}"
 install -o root -g root -m 0644 \

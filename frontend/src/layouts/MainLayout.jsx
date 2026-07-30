@@ -6,6 +6,7 @@ export function MainLayout({ children }) {
   const { user, logout } = useAuth()
   const history = useHistory()
   const location = useLocation()
+  const adminUrl = import.meta.env.VITE_ADMIN_URL || '/admin/'
   const isDeveloperArea = location.pathname === '/developer' || location.pathname.startsWith('/projects') || location.pathname.startsWith('/blog')
   const handleLogout = async () => { await logout(); history.push('/') }
 
@@ -19,7 +20,7 @@ export function MainLayout({ children }) {
         <NavLink to="/developer" activeClassName="active">개발자</NavLink>
       </nav>
       <div className="account-nav">
-        {user ? <>{user.is_staff && <a className="admin-page-link" href="/admin/">관리</a>}<Link to="/profile">{user.profile?.display_name || user.username}</Link><button className="text-button" type="button" onClick={handleLogout}>로그아웃</button></> : <Link className="admin-link" to="/login">로그인</Link>}
+        {user ? <>{user.is_staff && <a className="admin-page-link" href={adminUrl}>관리</a>}<Link to="/profile">{user.profile?.display_name || user.username}</Link><button className="text-button" type="button" onClick={handleLogout}>로그아웃</button></> : <Link className="admin-link" to="/login">로그인</Link>}
       </div>
     </header>
     <main>{children}</main>
