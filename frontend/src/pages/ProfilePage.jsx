@@ -6,8 +6,8 @@ import { useAuth } from '../hooks/useAuth'
 
 export function ProfilePage() {
   const { user, reloadUser } = useAuth()
-  const [account, setAccount] = useState({ email: '', first_name: '', last_name: '' })
-  const [profile, setProfile] = useState({ display_name: '', bio: '' })
+  const [account, setAccount] = useState({ first_name: '', last_name: '' })
+  const [profile, setProfile] = useState({ display_name: '' })
   const [error, setError] = useState(null)
   const [saved, setSaved] = useState(false)
   const [passwordForm, setPasswordForm] = useState({ current_password: '', new_password: '', new_password_confirm: '' })
@@ -17,8 +17,8 @@ export function ProfilePage() {
 
   useEffect(() => {
     if (!user) return
-    setAccount({ email: user.email, first_name: user.first_name, last_name: user.last_name })
-    setProfile({ display_name: user.profile?.display_name || '', bio: user.profile?.bio || '' })
+    setAccount({ first_name: user.first_name, last_name: user.last_name })
+    setProfile({ display_name: user.profile?.display_name || '' })
   }, [user])
 
   const submit = async (event) => {
@@ -51,10 +51,9 @@ export function ProfilePage() {
     <p className="eyebrow">ACCOUNT</p>
     <h1>프로필</h1>
     <form className="stack-form" onSubmit={submit}>
-      <div className="form-row"><label>아이디 (변경 불가)<input value={user.username} readOnly /></label><label>이메일<input type="email" value={account.email} onChange={(event) => setAccount({ ...account, email: event.target.value })} required /></label></div>
+      <div className="form-row"><label>아이디 (변경 불가)<input value={user.username} readOnly /></label><label>이메일 (변경 불가)<input type="email" value={user.email} readOnly /></label></div>
       <div className="form-row"><label>이름<input value={account.first_name} onChange={(event) => setAccount({ ...account, first_name: event.target.value })} /></label><label>성<input value={account.last_name} onChange={(event) => setAccount({ ...account, last_name: event.target.value })} /></label></div>
       <label>표시 이름<input value={profile.display_name} onChange={(event) => setProfile({ ...profile, display_name: event.target.value })} /></label>
-      <label>소개<textarea rows="6" value={profile.bio} onChange={(event) => setProfile({ ...profile, bio: event.target.value })} /></label>
       {saved && <p className="success-message">저장했습니다.</p>}
       {error && <ErrorState error={error} />}
       <button type="submit">저장</button>
