@@ -8,6 +8,8 @@ import { GuestbookSection } from '../components/GuestbookSection'
 import { PostCard } from '../components/PostCard'
 import { useAuth } from '../hooks/useAuth'
 
+const adminBaseUrl = (import.meta.env.VITE_ADMIN_URL || '/admin/').replace(/\/?$/, '/')
+
 function TodayJuno({ status, isStaff }) {
   return <section className="page-section today-juno" aria-labelledby="today-juno-title">
     <div className="section-heading">
@@ -15,7 +17,7 @@ function TodayJuno({ status, isStaff }) {
         <p className="eyebrow">오늘의 김준호</p>
         <h2 id="today-juno-title">요즘은 이렇습니다</h2>
       </div>
-      {isStaff && <a className="today-manage-link" href="/admin/guestbook/todaystatus/">관리</a>}
+      {isStaff && <a className="today-manage-link" href={`${adminBaseUrl}guestbook/todaystatus/`}>관리</a>}
     </div>
     {status ? <>
       <dl className="today-status-list">
